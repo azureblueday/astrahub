@@ -20,5 +20,5 @@ if table.find(dogshitlist, dogshit) then
     game.Players.LocalPlayer:Kick("We do not support your executor. For more executor information go to our Discord Server!")
 end
 
--- anti cheat bypass
-loadstring(game:HttpGet("https://raw.githubusercontent.com/azureblueday/astrahub/refs/heads/main/bypass.luau"))()
+-- main script
+loadstring(game:HttpGet("https://raw.githubusercontent.com/azureblueday/astrahub/refs/heads/main/astra58.luau"))()
