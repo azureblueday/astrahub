@@ -6,7 +6,7 @@ The main script uses a key system but is free to use, or buy a lifetime key for 
 
 **Executor Information**:
 1. Banned Executors: Solara & Xeno
-2. Recommended Executors: Volcano, bunni.lol, Macsploit, Wave, Sirhurt, Valex
+2. Recommended Executors: Volcano, bunni.lol, Macsploit, Wave, Sirhurt, Valex, Delta
 3. Developed on: MacSploit/v1.9.6s
 
 **Misc Information**
