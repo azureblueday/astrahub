@@ -1,7 +1,6 @@
 # Welcome to the Astra Hub repository, the best free FF2 script. 🌌
-We also offer a *lite script*, which is open source for all people to tinker with.
 
-Feel free to check out anything, access the source code of Lite in "lite.luau"
+We also offer a *lite script*, which is free version with no key system.
 The main script uses a key system but is free to use, or buy a lifetime key for only $3.99!
 
 **Executor Information**:
