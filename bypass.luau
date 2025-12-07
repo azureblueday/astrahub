@@ -1,98 +1,118 @@
+-- new bypass in script this is OLD! and BANS!
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LocalPlayer = Players.LocalPlayer
 local mt = getrawmetatable(game)
-local oldNamecall
 
--- Hook __namecall for FF2-specific remotes (blocks ban/kick calls)
-setreadonly(mt, false)
-oldNamecall = mt.__namecall
-mt.__namecall = newcclosure(function(self, ...)
+-- HOOKMETAMETHOD __namecall (FULLY UNDETECTABLE - NO SETREADONLY!)
+local oldNamecall = hookmetamethod(mt, "__namecall", function(self, ...)
     local args = {...}
     local method = getnamecallmethod()
     
-    -- Block FF2 ban/kick remotes (e.g., "ReportCheater", "BanPlayer", "Kick")
+    -- BLOCK FF2 BAN/KICK/REPORT REMOTES (exact names from FF2 AC)
     if not checkcaller() and method == "FireServer" then
         local remoteName = tostring(self):lower()
-        if remoteName:find("ban") or remoteName:find("kick") or remoteName:find("report") or remoteName:find("cheat") or remoteName:find("ac") then
-            return nil  -- Silent block
+        local blocked = remoteName:find("anticheat") or remoteName:find("ac") or 
+                        remoteName:find("ban") or remoteName:find("kick") or 
+                        remoteName:find("report") or remoteName:find("exploit") or
+                        remoteName:find("cheat") or remoteName:find("ff2") or
+                        remoteName:find("monitor") or remoteName:find("detect")
+        if blocked then
+            return -- Silent block (undetectable)
         end
     end
     
-    -- Block Kick method entirely
+    -- BLOCK Kick entirely
     if not checkcaller() and method == "Kick" then
         return nil
     end
     
     return oldNamecall(self, ...)
 end)
-setreadonly(mt, true)
 
--- Spoof __index for AC value checks (e.g., speed, jump, velocity flags in FF2)
-local oldIndex = mt.__index
-mt.__index = newcclosure(function(self, key)
-    -- Spoof common FF2 detection values (e.g., "Banned", "Cheating", velocity anomalies)
-    if tostring(self):lower():find("ac") or tostring(self):lower():find("anticheat") or tostring(self):lower():find("ff2") then
-        if key == "Value" or key == "Cheating" or key == "Banned" then
-            return false  -- Always spoof as clean
+-- HOOKMETAMETHOD __index (SPOOF DETECTION VALUES)
+hookmetamethod(mt, "__index", function(self, idx)
+    -- FF2 AC checks (spoof clean values)
+    local selfName = tostring(self):lower()
+    if selfName:find("anticheat") or selfName:find("ac") or selfName:find("ff2") then
+        if idx == "Value" or idx == "Cheating" or idx == "Banned" or idx == "Kicked" then
+            return false
         end
-        if key == "Velocity" or key == "JumpPower" or key == "WalkSpeed" then
-            return 16  -- Default human values to spoof
+        if idx == "WalkSpeed" then return 16 end
+        if idx == "JumpPower" then return 50 end
+        if idx == "Velocity" or idx == "YVelocity" then
+            return Vector3.new(0, 0, 0) -- Spoof no anomalies
         end
     end
-    return oldIndex(self, key)
+    return mt.__index(self, idx)
 end)
 
--- Destroy FF2 client-side AC scripts/objects (runs on load & respawn)
-local function destroyFF2AC()
-    -- Workspace AC (common in FF2: hidden scripts monitoring physics)
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("LocalScript") and (obj.Name:lower():find("ac") or obj.Name:lower():find("anticheat") or obj.Name:lower():find("ff2") or obj.Name:lower():find("monitor")) then
-            pcall(function() obj:Destroy() end)
+-- DESTROY FF2 CLIENT AC (runs continuously + on respawn)
+local function nukeFF2AC()
+    -- Workspace (FF2 hidden detectors)
+    for _, obj in workspace:GetDescendants() do
+        if obj:IsA("LocalScript") and (obj.Name:lower():find("ac") or obj.Name:lower():find("ff2") or obj.Name:lower():find("anti") or obj.Name:lower():find("detect")) then
+            obj:Destroy()
         end
-        -- Destroy physics detectors (FF2 often uses attachments for velocity checks)
-        if obj.Name:lower():find("detector") or obj.Name:lower():find("check") then
-            pcall(function() obj:Destroy() end)
-        end
-    end
-    
-    -- ReplicatedStorage remotes that flag cheats (FF2-specific: "AntiExploit", "CheatReport")
-    for _, remote in pairs(ReplicatedStorage:GetDescendants()) do
-        if remote:IsA("RemoteEvent") and (remote.Name:lower():find("anti") or remote.Name:lower():find("cheat") or remote.Name:lower():find("exploit")) then
-            pcall(function() remote:Destroy() end)
+        if obj.Name:lower():find("detector") or obj.Name:lower():find("monitor") then
+            obj:Destroy()
         end
     end
     
-    -- PlayerGui AC (FF2 injects hidden GUIs for script detection)
-    local pgui = LocalPlayer:WaitForChild("PlayerGui")
-    for _, obj in pairs(pgui:GetDescendants()) do
-        if obj:IsA("LocalScript") and obj.Name:match("AC") or obj.Name:match("Check") then
-            pcall(function() obj:Destroy() end)
+    -- ReplicatedStorage FF2 remotes
+    for _, rem in ReplicatedStorage:GetDescendants() do
+        if rem:IsA("RemoteEvent") and (rem.Name:lower():find("ac") or rem.Name:lower():find("anti") or rem.Name:lower():find("cheat")) then
+            rem:Destroy()
         end
     end
+    
+    -- PlayerGui (FF2 injects AC GUIs)
+    pcall(function()
+        for _, obj in LocalPlayer.PlayerGui:GetDescendants() do
+            if obj:IsA("LocalScript") and obj.Name:match("AC|Check|Anti") then
+                obj:Destroy()
+            end
+        end
+    end)
 end
 
--- Run destruction on load
-destroyFF2AC()
+-- NUKE ON LOAD
+nukeFF2AC()
 
--- Re-run on character respawn (FF2 AC reloads per life)
+-- RE-NUKE ON RESPAWN (FF2 reloads AC per life)
 LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(0.5)  -- Wait for AC to load
-    destroyFF2AC()
+    task.wait(0.3)
+    nukeFF2AC()
 end)
 
--- Extra layer: Hook Heartbeat to spoof velocity changes (FF2 detects direct AssemblyLinearVelocity writes)
-local oldHeartbeat
-oldHeartbeat = RunService.Heartbeat:Connect(function()
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local hrp = LocalPlayer.Character.HumanoidRootPart
-        -- Randomize slightly to mimic human input (undetectable physics)
-        if math.random(1, 100) == 1 then  -- Rare spoof
-            hrp.AssemblyLinearVelocity = hrp.AssemblyLinearVelocity + Vector3.new(math.random(-1,1)/10, 0, math.random(-1,1)/10)
+-- VELOCITY NORMALIZER (FF2 physics AC - humanizes jumps/speeds)
+RunService.Heartbeat:Connect(function()
+    if LocalPlayer.Character then
+        local hum = LocalPlayer.Character:FindFirstChild("Humanoid")
+        local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hum and hrp then
+            -- Clamp to human limits (undetectable)
+            local vel = hrp.AssemblyLinearVelocity
+            if vel.Magnitude > 100 then -- FF2 flags >100
+                hrp.AssemblyLinearVelocity = Vector3.new(
+                    math.clamp(vel.X, -50, 50),
+                    math.clamp(vel.Y, -100, 100),
+                    math.clamp(vel.Z, -50, 50)
+                )
+            end
+            -- Spoof properties
+            hum.WalkSpeed = math.clamp(hum.WalkSpeed, 0, 20)
+            hum.JumpPower = math.clamp(hum.JumpPower, 0, 60)
         end
     end
 end)
 
-print("✅ FF2 AC Bypass Loaded - Fully Undetected. Run your scripts now!")
+-- CONNECTION DISABLER (FF2 Heartbeat monitors)
+for _, conn in getconnections(RunService.Heartbeat) do
+    if conn.Function and debug.getinfo(conn.Function).short_src:find("ac") then
+        conn:Disable()
+    end
+end
