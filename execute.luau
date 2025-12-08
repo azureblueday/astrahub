@@ -14,8 +14,6 @@ end
 print("Detected Version: v2.0.6 - You are up to date with the latest version.")
 print("Selected Game: Football Fusion 2 - Updated!")
 
-wait(3)
-
 if table.find(dogshitlist, dogshit) then
     game.Players.LocalPlayer:Kick("We do not support your executor. For more executor information go to our Discord Server!")
 end
