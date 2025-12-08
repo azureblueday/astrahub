@@ -1,6 +1,6 @@
 -- ass executors
 local dogshit = identifyexecutor()
-local dogshitlist = { "Solara", "Xeno" }
+local dogshitlist = { "Solara" }
   
 -- game id shit
 
