@@ -1,8 +1,5 @@
 # Welcome to the Astra Hub repository, the best free FF2 script. 🌌
 
-We also offer a *lite script*, which is free version with no key system.
-The main script uses a key system but is free to use, or buy a lifetime key for only $3.99!
-
 **Executor Information**:
 1. Banned Executors: Solara & Xeno
 2. Recommended Executors: Volcano, bunni.lol, Macsploit, Wave, Sirhurt, Valex, Delta
