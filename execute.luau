@@ -1,6 +1,6 @@
 -- ass executors
 local dogshit = identifyexecutor()
-local dogshitlist = { "Solara", "Xeno" }
+local dogshitlist = { "Solara" }
   
 -- game id shit
 
@@ -15,7 +15,7 @@ print("Detected Version: v2.0.6 - You are up to date with the latest version.")
 print("Selected Game: Football Fusion 2 - Updated!")
 
 if table.find(dogshitlist, dogshit) then
-    game.Players.LocalPlayer:Kick("Astra | We do not support your executor. For more executor information go to our Discord Server!")
+    game.Players.LocalPlayer:Kick("ew solara 🤢")
 end
 
 -- main script
