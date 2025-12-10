@@ -19,4 +19,4 @@ if table.find(dogshitlist, dogshit) then
 end
 
 -- main script
-loadstring(game:HttpGet("https://raw.githubusercontent.com/azureblueday/astrahub/refs/heads/main/astra59"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/azureblueday/astrahub/refs/heads/main/astra59.luau"))()
