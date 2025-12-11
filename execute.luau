@@ -11,7 +11,7 @@ if game.PlaceId ~= allowed1 and game.PlaceId ~= allowed2 then
     game.Players.LocalPlayer:Kick("Astra | This game is not supported by Astra Hub! Join Football Fusion 2 to use this.")
 end
 
-print("Detected Version: v2.0.6 - You are up to date with the latest version.")
+print("Detected Version: v2.2.0 - You are up to date with the latest version.")
 print("Selected Game: Football Fusion 2 - Updated!")
 
 if table.find(dogshitlist, dogshit) then
