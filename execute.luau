@@ -1,6 +1,6 @@
 -- ass executors
 local dogshit = identifyexecutor()
-local dogshitlist = { "Solara" }
+local dogshitlist = { "Solara", "Xeno" }
   
 -- game id shit
 
@@ -15,7 +15,7 @@ print("Detected Version: v2.2.0 - You are up to date with the latest version.")
 print("Selected Game: Football Fusion 2 - Updated!")
 
 if table.find(dogshitlist, dogshit) then
-    game.Players.LocalPlayer:Kick("ew solara 🤢")
+    game.Players.LocalPlayer:Kick("Astra | For exploiting on Windows, use Volcano or bunni.lol!
 end
 
 -- main script
