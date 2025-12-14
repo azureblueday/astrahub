@@ -224,11 +224,3 @@ do
 		end
 	end)
 end
-
---// CLOSE WITH LEFT CTRL
-UIS.InputBegan:Connect(function(i, g)
-	if g then return end
-	if i.KeyCode == Enum.KeyCode.LeftControl then
-		gui:Destroy()
-	end
-end)
