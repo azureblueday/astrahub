@@ -1,118 +1,88 @@
--- new bypass in script this is OLD! and BANS!
+local RS = game:GetService("ReplicatedStorage")
+local gc = getgc(true)
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local LocalPlayer = Players.LocalPlayer
-local mt = getrawmetatable(game)
-
--- HOOKMETAMETHOD __namecall (FULLY UNDETECTABLE - NO SETREADONLY!)
-local oldNamecall = hookmetamethod(mt, "__namecall", function(self, ...)
-    local args = {...}
-    local method = getnamecallmethod()
+local function findTargetConstant()
+    local candidates = {}
     
-    -- BLOCK FF2 BAN/KICK/REPORT REMOTES (exact names from FF2 AC)
-    if not checkcaller() and method == "FireServer" then
-        local remoteName = tostring(self):lower()
-        local blocked = remoteName:find("anticheat") or remoteName:find("ac") or 
-                        remoteName:find("ban") or remoteName:find("kick") or 
-                        remoteName:find("report") or remoteName:find("exploit") or
-                        remoteName:find("cheat") or remoteName:find("ff2") or
-                        remoteName:find("monitor") or remoteName:find("detect")
-        if blocked then
-            return -- Silent block (undetectable)
-        end
+    for _, obj in pairs(gc) do
+        pcall(function()
+            if type(obj) == "function" and islclosure(obj) and not isexecutorclosure(obj) then
+                local protos = getprotos(obj)
+                if protos and #protos == 1 then
+                    local consts = getconstants(protos[1])
+                    for _, const in pairs(consts) do
+                        if type(const) == "number" and const > 1000000 and const < 10000000 then
+                            table.insert(candidates, {value = const, func = obj})
+                        end
+                    end
+                end
+            end
+        end)
     end
     
-    -- BLOCK Kick entirely
-    if not checkcaller() and method == "Kick" then
-        return nil
-    end
-    
-    return oldNamecall(self, ...)
-end)
+    return candidates
+end
 
--- HOOKMETAMETHOD __index (SPOOF DETECTION VALUES)
-hookmetamethod(mt, "__index", function(self, idx)
-    -- FF2 AC checks (spoof clean values)
-    local selfName = tostring(self):lower()
-    if selfName:find("anticheat") or selfName:find("ac") or selfName:find("ff2") then
-        if idx == "Value" or idx == "Cheating" or idx == "Banned" or idx == "Kicked" then
-            return false
-        end
-        if idx == "WalkSpeed" then return 16 end
-        if idx == "JumpPower" then return 50 end
-        if idx == "Velocity" or idx == "YVelocity" then
-            return Vector3.new(0, 0, 0) -- Spoof no anomalies
-        end
-    end
-    return mt.__index(self, idx)
-end)
-
--- DESTROY FF2 CLIENT AC (runs continuously + on respawn)
-local function nukeFF2AC()
-    -- Workspace (FF2 hidden detectors)
-    for _, obj in workspace:GetDescendants() do
-        if obj:IsA("LocalScript") and (obj.Name:lower():find("ac") or obj.Name:lower():find("ff2") or obj.Name:lower():find("anti") or obj.Name:lower():find("detect")) then
-            obj:Destroy()
-        end
-        if obj.Name:lower():find("detector") or obj.Name:lower():find("monitor") then
-            obj:Destroy()
-        end
-    end
-    
-    -- ReplicatedStorage FF2 remotes
-    for _, rem in ReplicatedStorage:GetDescendants() do
-        if rem:IsA("RemoteEvent") and (rem.Name:lower():find("ac") or rem.Name:lower():find("anti") or rem.Name:lower():find("cheat")) then
-            rem:Destroy()
-        end
-    end
-    
-    -- PlayerGui (FF2 injects AC GUIs)
+for _, obj in pairs(gc) do
     pcall(function()
-        for _, obj in LocalPlayer.PlayerGui:GetDescendants() do
-            if obj:IsA("LocalScript") and obj.Name:match("AC|Check|Anti") then
-                obj:Destroy()
+        if type(obj) == "table" and rawlen(obj) == 19 then
+            local last = rawget(obj, 19)
+            if type(last) == "userdata" then
+                for i = 2, 18 do
+                    rawset(obj, i, math.random(1e6, 1e8))
+                end
             end
         end
     end)
 end
 
--- NUKE ON LOAD
-nukeFF2AC()
+local detectedConstants = findTargetConstant()
 
--- RE-NUKE ON RESPAWN (FF2 reloads AC per life)
-LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(0.3)
-    nukeFF2AC()
-end)
+if #detectedConstants > 0 then
+    for _, candidate in ipairs(detectedConstants) do
+        pcall(function()
+            hookfunction(candidate.func, newcclosure(function() end))
+        end)
+    end
+end
 
--- VELOCITY NORMALIZER (FF2 physics AC - humanizes jumps/speeds)
-RunService.Heartbeat:Connect(function()
-    if LocalPlayer.Character then
-        local hum = LocalPlayer.Character:FindFirstChild("Humanoid")
-        local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if hum and hrp then
-            -- Clamp to human limits (undetectable)
-            local vel = hrp.AssemblyLinearVelocity
-            if vel.Magnitude > 100 then -- FF2 flags >100
-                hrp.AssemblyLinearVelocity = Vector3.new(
-                    math.clamp(vel.X, -50, 50),
-                    math.clamp(vel.Y, -100, 100),
-                    math.clamp(vel.Z, -50, 50)
-                )
-            end
-            -- Spoof properties
-            hum.WalkSpeed = math.clamp(hum.WalkSpeed, 0, 20)
-            hum.JumpPower = math.clamp(hum.JumpPower, 0, 60)
+local remote = RS.Remotes.CharacterSoundEvent
+local oldFire = remote.FireServer
+
+hookfunction(remote.FireServer, newcclosure(function(self, ...)
+    local args = {...}
+    
+    if type(args[1]) == "string" and #args[1] > 20 then
+        if args[2] == "b51b07a5c14d" or args[2] == "error" then
+            return
         end
     end
-end)
+    
+    return oldFire(self, ...)
+end))
 
--- CONNECTION DISABLER (FF2 Heartbeat monitors)
-for _, conn in getconnections(RunService.Heartbeat) do
-    if conn.Function and debug.getinfo(conn.Function).short_src:find("ac") then
-        conn:Disable()
-    end
+_G.b51b07a5c14d = false
+
+local fakeLS = Instance.new("LocalScript")
+fakeLS.Disabled = true
+fakeLS.Parent = game:GetService("ReplicatedFirst")
+
+for _, tbl in pairs(gc) do
+    pcall(function()
+        if type(tbl) == "table" then
+            local mt = getrawmetatable(tbl)
+            if mt and mt.__call then
+                local oldCall = mt.__call
+                rawset(mt, "__call", newcclosure(function(self, a, b, c, d, e, f)
+                    if a and b and c and d and e and f then
+                        if a > 1000 and b > 1000 then
+                            return { 20.02 }
+                        end
+                    end
+                    return oldCall(self, a, b, c, d, e, f)
+                end))
+                rawset(mt, "__tostring", nil)
+            end
+        end
+    end)
 end
