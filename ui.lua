@@ -1,4 +1,4 @@
-print("387233")
+print("UI Lib by @d1starzz")
 
 local AstraLib = {}
 AstraLib.__index = AstraLib
@@ -370,7 +370,7 @@ function AstraLib:CreateWindow(options)
         Size = UDim2.new(0, 50, 0, 50),
         Visible = IsMobile(),
         ZIndex = ZIndex.MobileButton,
-        Image = "rbxassetid://7072718362",
+        Image = "rbxassetid://114439996739424",
         ImageColor3 = Color3.new(1, 1, 1),
         AutoButtonColor = false
     }, {
