@@ -1,6 +1,8 @@
+print("387233")
+
 local AstraLib = {}
 AstraLib.__index = AstraLib
-print("849021")
+
 -- Services
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -325,12 +327,12 @@ end
 -- ═══════════════════════════════════════════════════════════════════
 function AstraLib:CreateWindow(options)
     options = options or {}
-    local Title = options.Title or "Nova Hub"
+    local Title = options.Title or "Astra Hub"
     local Version = options.Version or "nil"
-    local ThemeName = options.Theme or "Purple"
-    local ConfigFolder = options.ConfigFolder or "NovaHub"
+    local ThemeName = options.Theme or "Dark"
+    local ConfigFolder = options.ConfigFolder or "AstraLib"
     local DefaultTab = options.DefaultTab
-    local MinimizeKey = options.MinimizeKey or Enum.KeyCode.LeftControl
+    local MinimizeKey = options.MinimizeKey or Enum.KeyCode.RightControl
     
     local Theme = Themes[ThemeName] or Themes.Dark
     local Window = {
@@ -479,7 +481,7 @@ function AstraLib:CreateWindow(options)
         Position = UDim2.new(1, -55 * Scale, 0, 22 * Scale),
         Size = UDim2.new(0, 40 * Scale, 0, 16 * Scale),
         Font = Enum.Font.Gotham,
-        Text = "Beta v1",
+        Text = "Beta",
         TextColor3 = Theme.TextMuted,
         TextSize = 12 * Scale,
         TextXAlignment = Enum.TextXAlignment.Right,
@@ -903,21 +905,32 @@ function AstraLib:CreateWindow(options)
                     PaddingBottom = UDim.new(0, 12 * Scale),
                     PaddingLeft = UDim.new(0, 15 * Scale),
                     PaddingRight = UDim.new(0, 15 * Scale)
-                })
+                }),
+                Create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 0)})
             })
             
             Create("TextLabel", {
                 Name = "Header",
                 Parent = SectionFrame,
                 BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 16 * Scale),
-                Font = Enum.Font.Gotham,
+                Size = UDim2.new(1, 0, 0, 22 * Scale),
+                Font = Enum.Font.GothamBold,
                 Text = SectionName,
-                TextColor3 = Theme.TextMuted,
-                TextSize = 11 * Scale,
+                TextColor3 = Theme.Text,
+                TextSize = 14 * Scale,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 LayoutOrder = 0,
                 ZIndex = ZIndex.Cards + 1
+            })
+            
+            -- Spacer after header
+            Create("Frame", {
+                Name = "HeaderSpacer",
+                Parent = SectionFrame,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 6 * Scale),
+                LayoutOrder = 0.5,
+                ZIndex = ZIndex.Cards
             })
             
             local Content = Create("Frame", {
@@ -928,23 +941,23 @@ function AstraLib:CreateWindow(options)
                 AutomaticSize = Enum.AutomaticSize.Y,
                 LayoutOrder = 1,
                 ZIndex = ZIndex.Cards + 1
-            }, {Create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8 * Scale)})})
+            }, {Create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10 * Scale)})})
             
             Section.Frame = SectionFrame
             Section.Content = Content
             
-            -- LABEL
+            -- LABEL (styled as sub-header)
             function Section:CreateLabel(opt)
                 opt = opt or {}
                 local Text = opt.Text or "Label"
                 local LabelFrame = Create("Frame", {
                     Name = "Label", Parent = Content, BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 0, 25 * Scale), ZIndex = ZIndex.Elements
+                    Size = UDim2.new(1, 0, 0, 18 * Scale), ZIndex = ZIndex.Elements
                 })
                 local Label = Create("TextLabel", {
                     Name = "Text", Parent = LabelFrame, BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 1, 0), Font = Enum.Font.GothamMedium,
-                    Text = Text, TextColor3 = Theme.Text, TextSize = 14 * Scale,
+                    Size = UDim2.new(1, 0, 1, 0), Font = Enum.Font.Gotham,
+                    Text = Text, TextColor3 = Theme.TextMuted, TextSize = 11 * Scale,
                     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = ZIndex.Elements
                 })
                 local obj = {Frame = LabelFrame, Label = Label}
@@ -1098,11 +1111,16 @@ function AstraLib:CreateWindow(options)
                 local Open = false
                 local Dropdown = {Type = "Dropdown", Value = Value, Frame = Frame}
                 
+                local function GetListHeight()
+                    return math.min(#Items * (28 * Scale + 2) + 12, 150 * Scale)
+                end
+                
                 local function UpdatePos()
+                    if not Button or not Button.Parent then return end
                     local bp = Button.AbsolutePosition
                     local bs = Button.AbsoluteSize
                     ListContainer.Position = UDim2.new(0, bp.X, 0, bp.Y + bs.Y + 5)
-                    List.Size = UDim2.new(0, bs.X, 0, math.min(#Items * (28 * Scale + 2) + 12, 150 * Scale))
+                    ListContainer.Size = UDim2.new(0, bs.X, 0, GetListHeight())
                 end
                 
                 local function CreateOption(item)
@@ -1116,29 +1134,38 @@ function AstraLib:CreateWindow(options)
                     })
                     Opt.MouseEnter:Connect(function() Tween(Opt, {BackgroundTransparency = 0}, TweenPresets.Quick) end)
                     Opt.MouseLeave:Connect(function() Tween(Opt, {BackgroundTransparency = 1}, TweenPresets.Quick) end)
-                    Opt.MouseButton1Click:Connect(function() Dropdown:Set(item); Dropdown:CloseDropdown() end)
+                    Opt.MouseButton1Click:Connect(function() 
+                        Dropdown:Set(item)
+                        Dropdown:CloseDropdown()
+                    end)
                 end
                 
                 function Dropdown:CloseDropdown()
                     if not Open then return end
                     Open = false
-                    Window.OpenDropdown = nil
+                    if Window.OpenDropdown == Dropdown then
+                        Window.OpenDropdown = nil
+                    end
                     Tween(Arrow, {Rotation = 0}, TweenPresets.Normal)
                     Tween(List, {Size = UDim2.new(0, Button.AbsoluteSize.X, 0, 0)}, TweenPresets.Normal)
                     Tween(Button:FindFirstChild("UIStroke"), {Color = Theme.InputBorder}, TweenPresets.Quick)
-                    task.wait(0.25)
-                    if not Open then ListContainer.Visible = false end
+                    task.delay(0.25, function()
+                        if not Open then ListContainer.Visible = false end
+                    end)
                 end
                 
                 function Dropdown:OpenDropdown()
-                    if Window.OpenDropdown and Window.OpenDropdown ~= Dropdown then Window.OpenDropdown:CloseDropdown() end
+                    if Window.OpenDropdown and Window.OpenDropdown ~= Dropdown then 
+                        Window.OpenDropdown:CloseDropdown() 
+                        task.wait(0.1)
+                    end
                     Open = true
                     Window.OpenDropdown = Dropdown
                     UpdatePos()
                     ListContainer.Visible = true
                     List.Size = UDim2.new(0, Button.AbsoluteSize.X, 0, 0)
                     Tween(Arrow, {Rotation = 180}, TweenPresets.Normal)
-                    Tween(List, {Size = UDim2.new(0, Button.AbsoluteSize.X, 0, math.min(#Items * (28 * Scale + 2) + 12, 150 * Scale))}, TweenPresets.Bounce)
+                    Tween(List, {Size = UDim2.new(0, Button.AbsoluteSize.X, 0, GetListHeight())}, TweenPresets.Bounce)
                     Tween(Button:FindFirstChild("UIStroke"), {Color = Theme.Accent}, TweenPresets.Quick)
                 end
                 
@@ -1155,13 +1182,36 @@ function AstraLib:CreateWindow(options)
                     for _, c in pairs(Scroll:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
                     Items = newItems
                     for _, item in ipairs(Items) do CreateOption(item) end
+                    if Open then UpdatePos() end
                 end
                 
                 Button.MouseEnter:Connect(function() if not Open then Tween(Button:FindFirstChild("UIStroke"), {Color = Theme.TextMuted}, TweenPresets.Quick) end end)
                 Button.MouseLeave:Connect(function() if not Open then Tween(Button:FindFirstChild("UIStroke"), {Color = Theme.InputBorder}, TweenPresets.Quick) end end)
-                Button.MouseButton1Click:Connect(function() if Open then Dropdown:CloseDropdown() else Dropdown:OpenDropdown() end end)
-                Column:GetPropertyChangedSignal("CanvasPosition"):Connect(function() if Open then UpdatePos() end end)
-                Frame.Destroying:Connect(function() ListContainer:Destroy() end)
+                Button.MouseButton1Click:Connect(function() 
+                    if Open then 
+                        Dropdown:CloseDropdown() 
+                    else 
+                        Dropdown:OpenDropdown() 
+                    end 
+                end)
+                
+                -- Update position when scrolling
+                Column:GetPropertyChangedSignal("CanvasPosition"):Connect(function() 
+                    if Open then UpdatePos() end 
+                end)
+                
+                -- Update position when window moves
+                MainContainer:GetPropertyChangedSignal("Position"):Connect(function()
+                    if Open then UpdatePos() end
+                end)
+                
+                -- Cleanup when destroyed
+                Frame.Destroying:Connect(function() 
+                    if Window.OpenDropdown == Dropdown then
+                        Window.OpenDropdown = nil
+                    end
+                    ListContainer:Destroy() 
+                end)
                 
                 if Flag then Window.Config:RegisterElement(Flag, Dropdown) end
                 return Dropdown
