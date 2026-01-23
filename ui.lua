@@ -1,8 +1,6 @@
-print("UI Lib v3")
-
 local AstraLib = {}
 AstraLib.__index = AstraLib
-
+print("849021")
 -- Services
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -327,12 +325,12 @@ end
 -- ═══════════════════════════════════════════════════════════════════
 function AstraLib:CreateWindow(options)
     options = options or {}
-    local Title = options.Title or "Astra Hub"
-    local Version = options.Version or "v3"
-    local ThemeName = options.Theme or "Dark"
-    local ConfigFolder = options.ConfigFolder or "AstraLib"
+    local Title = options.Title or "Nova Hub"
+    local Version = options.Version or "nil"
+    local ThemeName = options.Theme or "Purple"
+    local ConfigFolder = options.ConfigFolder or "NovaHub"
     local DefaultTab = options.DefaultTab
-    local MinimizeKey = options.MinimizeKey or Enum.KeyCode.RightControl
+    local MinimizeKey = options.MinimizeKey or Enum.KeyCode.LeftControl
     
     local Theme = Themes[ThemeName] or Themes.Dark
     local Window = {
@@ -481,7 +479,7 @@ function AstraLib:CreateWindow(options)
         Position = UDim2.new(1, -55 * Scale, 0, 22 * Scale),
         Size = UDim2.new(0, 40 * Scale, 0, 16 * Scale),
         Font = Enum.Font.Gotham,
-        Text = Version,
+        Text = "Beta v1",
         TextColor3 = Theme.TextMuted,
         TextSize = 12 * Scale,
         TextXAlignment = Enum.TextXAlignment.Right,
