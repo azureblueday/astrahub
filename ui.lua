@@ -1,37 +1,4 @@
---[[
-    AstraLib v3.1 - Roblox UI Library
-    Based on Astra Hub Design
-    
-    CHANGELOG v3.1:
-    - Fixed ZIndex layering issues (dropdowns now properly appear above other elements)
-    - Added smooth tween animations throughout the UI
-    - Added ripple click effects on buttons
-    - Fixed dropdown clipping issues
-    - Added hover animations for all interactive elements
-    - Improved mobile toggle button animations
-    - Fixed sidebar corner rendering
-    - Added animation presets for consistent feel
-    
-    Features:
-    - Multiple themes support (Dark, Midnight, Ocean, Purple, Emerald, Rose)
-    - Mobile scaling & toggle button
-    - Config system (save/load/delete)
-    - Smooth tween animations
-    - Proper ZIndex layering
-    - Toggles, Sliders, Dropdowns, Buttons, Labels, Keybinds, Inputs
-    
-    Usage:
-    local AstraLib = loadstring(game:HttpGet("YOUR_URL"))()
-    local Window = AstraLib:CreateWindow({
-        Title = "My Hub",
-        Version = "v1.0",
-        Theme = "Dark",
-        ConfigFolder = "MyHub"
-    })
-    local Tab = Window:CreateTab({Name = "Main", Icon = "rbxassetid://0"})
-    local Section = Tab:CreateSection({Name = "Features", Side = "Left"})
-    Section:CreateToggle({Name = "Toggle", Default = false, Callback = function(v) end})
-]]
+print("UI Lib v3")
 
 local AstraLib = {}
 AstraLib.__index = AstraLib
@@ -631,7 +598,7 @@ function AstraLib:CreateWindow(options)
         Size = UDim2.new(0, 50 * Scale, 0, 20 * Scale),
         AnchorPoint = Vector2.new(0, 0.5),
         Font = Enum.Font.Gotham,
-        Text = "v10",
+        Text = Version,
         TextColor3 = Theme.TextMuted,
         TextSize = 12 * Scale,
         TextXAlignment = Enum.TextXAlignment.Left,
