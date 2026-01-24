@@ -1,4 +1,4 @@
-print("UI Lib by @d1starzz")
+print("UI Lib by @d1starzz - v2.1.2")
 
 local AstraLib = {}
 AstraLib.__index = AstraLib
@@ -248,7 +248,7 @@ local Themes = {
 }
 
 -- ═══════════════════════════════════════════════════════════════════
--- CONFIG SYSTEM
+-- CONFIG SYSTEM (Fixed)
 -- ═══════════════════════════════════════════════════════════════════
 local ConfigSystem = {}
 ConfigSystem.__index = ConfigSystem
@@ -257,69 +257,148 @@ function ConfigSystem.new(folder)
     local self = setmetatable({}, ConfigSystem)
     self.Folder = folder or "AstraLib"
     self.Elements = {}
-    pcall(function()
-        if not isfolder(self.Folder) then makefolder(self.Folder) end
+    self.OnConfigLoaded = nil -- Callback for when config is loaded
+    
+    -- Safely create folder
+    local success, err = pcall(function()
+        if isfolder and not isfolder(self.Folder) then 
+            makefolder(self.Folder) 
+        end
     end)
+    
+    if not success then
+        warn("[AstraLib] Config folder creation failed: " .. tostring(err))
+    end
+    
     return self
 end
 
 function ConfigSystem:RegisterElement(id, element)
-    self.Elements[id] = element
+    if id and element then
+        self.Elements[id] = element
+    end
 end
 
 function ConfigSystem:GetConfigs()
     local configs = {}
-    pcall(function()
-        if isfolder(self.Folder) then
+    local success, err = pcall(function()
+        if isfolder and isfolder(self.Folder) and listfiles then
             for _, file in pairs(listfiles(self.Folder)) do
                 local name = file:match("([^/\\]+)%.json$")
-                if name then table.insert(configs, name) end
-            end
-        end
-    end)
-    return configs
-end
-
-function ConfigSystem:SaveConfig(name)
-    local data = {}
-    for id, element in pairs(self.Elements) do
-        if element.Type == "Toggle" then data[id] = element.Value
-        elseif element.Type == "Slider" then data[id] = element.Value
-        elseif element.Type == "Dropdown" then data[id] = element.Value
-        elseif element.Type == "Keybind" then data[id] = element.Value.Name
-        elseif element.Type == "Input" then data[id] = element.Value
-        end
-    end
-    pcall(function()
-        writefile(self.Folder .. "/" .. name .. ".json", HttpService:JSONEncode(data))
-    end)
-end
-
-function ConfigSystem:LoadConfig(name)
-    pcall(function()
-        local path = self.Folder .. "/" .. name .. ".json"
-        if isfile(path) then
-            local data = HttpService:JSONDecode(readfile(path))
-            for id, value in pairs(data) do
-                local element = self.Elements[id]
-                if element then
-                    if element.Type == "Toggle" then element:Set(value)
-                    elseif element.Type == "Slider" then element:Set(value)
-                    elseif element.Type == "Dropdown" then element:Set(value)
-                    elseif element.Type == "Keybind" then element:Set(Enum.KeyCode[value])
-                    elseif element.Type == "Input" then element:Set(value)
-                    end
+                if name then 
+                    table.insert(configs, name) 
                 end
             end
         end
     end)
+    
+    if not success then
+        warn("[AstraLib] Failed to get configs: " .. tostring(err))
+    end
+    
+    return configs
+end
+
+function ConfigSystem:SaveConfig(name)
+    if not name or name == "" then
+        warn("[AstraLib] Config name cannot be empty")
+        return false
+    end
+    
+    local data = {}
+    for id, element in pairs(self.Elements) do
+        if element.Type == "Toggle" then 
+            data[id] = element.Value
+        elseif element.Type == "Slider" then 
+            data[id] = element.Value
+        elseif element.Type == "Dropdown" then 
+            data[id] = element.Value
+        elseif element.Type == "Keybind" then 
+            data[id] = element.Value and element.Value.Name or "Unknown"
+        elseif element.Type == "Input" then 
+            data[id] = element.Value
+        end
+    end
+    
+    local success, err = pcall(function()
+        if writefile then
+            writefile(self.Folder .. "/" .. name .. ".json", HttpService:JSONEncode(data))
+        end
+    end)
+    
+    if not success then
+        warn("[AstraLib] Failed to save config: " .. tostring(err))
+        return false
+    end
+    
+    return true
+end
+
+function ConfigSystem:LoadConfig(name)
+    if not name or name == "" then
+        warn("[AstraLib] Config name cannot be empty")
+        return false
+    end
+    
+    local success, err = pcall(function()
+        local path = self.Folder .. "/" .. name .. ".json"
+        if isfile and isfile(path) and readfile then
+            local content = readfile(path)
+            local data = HttpService:JSONDecode(content)
+            
+            for id, value in pairs(data) do
+                local element = self.Elements[id]
+                if element then
+                    if element.Type == "Toggle" then 
+                        element:Set(value)
+                    elseif element.Type == "Slider" then 
+                        element:Set(value)
+                    elseif element.Type == "Dropdown" then 
+                        element:Set(value)
+                    elseif element.Type == "Keybind" then 
+                        local keyCode = Enum.KeyCode[value]
+                        if keyCode then
+                            element:Set(keyCode)
+                        end
+                    elseif element.Type == "Input" then 
+                        element:Set(value)
+                    end
+                end
+            end
+            
+            if self.OnConfigLoaded then
+                self.OnConfigLoaded(name)
+            end
+        end
+    end)
+    
+    if not success then
+        warn("[AstraLib] Failed to load config: " .. tostring(err))
+        return false
+    end
+    
+    return true
 end
 
 function ConfigSystem:DeleteConfig(name)
-    pcall(function()
+    if not name or name == "" then
+        warn("[AstraLib] Config name cannot be empty")
+        return false
+    end
+    
+    local success, err = pcall(function()
         local path = self.Folder .. "/" .. name .. ".json"
-        if isfile(path) then delfile(path) end
+        if isfile and isfile(path) and delfile then 
+            delfile(path) 
+        end
     end)
+    
+    if not success then
+        warn("[AstraLib] Failed to delete config: " .. tostring(err))
+        return false
+    end
+    
+    return true
 end
 
 -- ═══════════════════════════════════════════════════════════════════
@@ -342,7 +421,8 @@ function AstraLib:CreateWindow(options)
         ThemeName = ThemeName,
         Open = true,
         Config = ConfigSystem.new(ConfigFolder),
-        OpenDropdown = nil
+        OpenDropdown = nil,
+        ThemeObjects = {} -- Store references for theme updates
     }
     
     local Scale = GetScale()
@@ -378,11 +458,15 @@ function AstraLib:CreateWindow(options)
         Create("UIStroke", {Color = Theme.CardBorder, Thickness = 2})
     })
     
+    -- Store for theme updates
+    Window.ThemeObjects.MobileButton = MobileButton
+    Window.ThemeObjects.MobileButtonStroke = MobileButton:FindFirstChild("UIStroke")
+    
     MobileButton.MouseEnter:Connect(function()
-        Tween(MobileButton, {BackgroundColor3 = Theme.AccentHover, Size = UDim2.new(0, 55, 0, 55)}, TweenPresets.Bounce)
+        Tween(MobileButton, {BackgroundColor3 = Window.Theme.AccentHover, Size = UDim2.new(0, 55, 0, 55)}, TweenPresets.Bounce)
     end)
     MobileButton.MouseLeave:Connect(function()
-        Tween(MobileButton, {BackgroundColor3 = Theme.Accent, Size = UDim2.new(0, 50, 0, 50)}, TweenPresets.Normal)
+        Tween(MobileButton, {BackgroundColor3 = Window.Theme.Accent, Size = UDim2.new(0, 50, 0, 50)}, TweenPresets.Normal)
     end)
     
     -- Main Container
@@ -409,8 +493,11 @@ function AstraLib:CreateWindow(options)
         Create("UIStroke", {Color = Theme.CardBorder, Thickness = 1})
     })
     
+    Window.ThemeObjects.MainFrame = MainFrame
+    Window.ThemeObjects.MainFrameStroke = MainFrame:FindFirstChild("UIStroke")
+    
     -- Shadow
-    Create("ImageLabel", {
+    local Shadow = Create("ImageLabel", {
         Name = "Shadow",
         Parent = MainFrame,
         BackgroundTransparency = 1,
@@ -425,6 +512,8 @@ function AstraLib:CreateWindow(options)
         SliceCenter = Rect.new(49, 49, 450, 450)
     })
     
+    Window.ThemeObjects.Shadow = Shadow
+    
     -- Sidebar
     local Sidebar = Create("Frame", {
         Name = "Sidebar",
@@ -437,8 +526,10 @@ function AstraLib:CreateWindow(options)
         Create("UICorner", {CornerRadius = UDim.new(0, 12)})
     })
     
+    Window.ThemeObjects.Sidebar = Sidebar
+    
     -- Sidebar corner fix
-    Create("Frame", {
+    local SidebarFix = Create("Frame", {
         Name = "Fix",
         Parent = Sidebar,
         BackgroundColor3 = Theme.Sidebar,
@@ -448,8 +539,10 @@ function AstraLib:CreateWindow(options)
         ZIndex = ZIndex.Sidebar + 1
     })
     
+    Window.ThemeObjects.SidebarFix = SidebarFix
+    
     -- Sidebar divider
-    Create("Frame", {
+    local Divider = Create("Frame", {
         Name = "Divider",
         Parent = MainFrame,
         BackgroundColor3 = Theme.CardBorder,
@@ -459,8 +552,10 @@ function AstraLib:CreateWindow(options)
         ZIndex = ZIndex.Sidebar + 2
     })
     
+    Window.ThemeObjects.Divider = Divider
+    
     -- Title
-    Create("TextLabel", {
+    local TitleLabel = Create("TextLabel", {
         Name = "Title",
         Parent = Sidebar,
         BackgroundTransparency = 1,
@@ -474,7 +569,9 @@ function AstraLib:CreateWindow(options)
         ZIndex = ZIndex.SidebarContent
     })
     
-    Create("TextLabel", {
+    Window.ThemeObjects.TitleLabel = TitleLabel
+    
+    local VersionLabel = Create("TextLabel", {
         Name = "Version",
         Parent = Sidebar,
         BackgroundTransparency = 1,
@@ -488,7 +585,9 @@ function AstraLib:CreateWindow(options)
         ZIndex = ZIndex.SidebarContent
     })
     
-    Create("TextLabel", {
+    Window.ThemeObjects.VersionLabel = VersionLabel
+    
+    local TabSectionLabel = Create("TextLabel", {
         Name = "TabSection",
         Parent = Sidebar,
         BackgroundTransparency = 1,
@@ -501,6 +600,8 @@ function AstraLib:CreateWindow(options)
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = ZIndex.SidebarContent
     })
+    
+    Window.ThemeObjects.TabSectionLabel = TabSectionLabel
     
     -- Tab Container
     local TabContainer = Create("ScrollingFrame", {
@@ -521,6 +622,8 @@ function AstraLib:CreateWindow(options)
         Create("UIPadding", {PaddingRight = UDim.new(0, 5)})
     })
     
+    Window.ThemeObjects.TabContainer = TabContainer
+    
     -- User Profile
     local UserFrame = Create("Frame", {
         Name = "User",
@@ -531,7 +634,7 @@ function AstraLib:CreateWindow(options)
         ZIndex = ZIndex.SidebarContent
     })
     
-    Create("ImageLabel", {
+    local AvatarFrame = Create("ImageLabel", {
         Name = "Avatar",
         Parent = UserFrame,
         BackgroundColor3 = Theme.Card,
@@ -542,7 +645,9 @@ function AstraLib:CreateWindow(options)
         ZIndex = ZIndex.SidebarContent + 1
     }, {Create("UICorner", {CornerRadius = UDim.new(1, 0)})})
     
-    Create("TextLabel", {
+    Window.ThemeObjects.AvatarFrame = AvatarFrame
+    
+    local UserName = Create("TextLabel", {
         Name = "Name",
         Parent = UserFrame,
         BackgroundTransparency = 1,
@@ -557,7 +662,9 @@ function AstraLib:CreateWindow(options)
         ZIndex = ZIndex.SidebarContent
     })
     
-    Create("TextLabel", {
+    Window.ThemeObjects.UserName = UserName
+    
+    local DisplayName = Create("TextLabel", {
         Name = "Display",
         Parent = UserFrame,
         BackgroundTransparency = 1,
@@ -570,6 +677,8 @@ function AstraLib:CreateWindow(options)
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = ZIndex.SidebarContent
     })
+    
+    Window.ThemeObjects.DisplayName = DisplayName
     
     -- Content Area
     local ContentArea = Create("Frame", {
@@ -590,7 +699,7 @@ function AstraLib:CreateWindow(options)
         ZIndex = ZIndex.TopBar
     })
     
-    Create("TextLabel", {
+    local TopVersionLabel = Create("TextLabel", {
         Name = "Version",
         Parent = TopBar,
         BackgroundTransparency = 1,
@@ -604,6 +713,8 @@ function AstraLib:CreateWindow(options)
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = ZIndex.TopBar
     })
+    
+    Window.ThemeObjects.TopVersionLabel = TopVersionLabel
     
     -- Top Icons
     local TopIcons = Create("Frame", {
@@ -633,8 +744,11 @@ function AstraLib:CreateWindow(options)
         ImageColor3 = Theme.TextMuted,
         ZIndex = ZIndex.TopBar
     })
-    SearchIcon.MouseEnter:Connect(function() Tween(SearchIcon, {ImageColor3 = Theme.Text}, TweenPresets.Quick) end)
-    SearchIcon.MouseLeave:Connect(function() Tween(SearchIcon, {ImageColor3 = Theme.TextMuted}, TweenPresets.Quick) end)
+    
+    Window.ThemeObjects.SearchIcon = SearchIcon
+    
+    SearchIcon.MouseEnter:Connect(function() Tween(SearchIcon, {ImageColor3 = Window.Theme.Text}, TweenPresets.Quick) end)
+    SearchIcon.MouseLeave:Connect(function() Tween(SearchIcon, {ImageColor3 = Window.Theme.TextMuted}, TweenPresets.Quick) end)
     
     -- Minimize Button
     local MinimizeBtn = Create("TextButton", {
@@ -647,11 +761,13 @@ function AstraLib:CreateWindow(options)
         ZIndex = ZIndex.TopBar
     }, {Create("UICorner", {CornerRadius = UDim.new(1, 0)})})
     
+    Window.ThemeObjects.MinimizeBtn = MinimizeBtn
+    
     MinimizeBtn.MouseEnter:Connect(function()
-        Tween(MinimizeBtn, {Size = UDim2.new(0, 18 * Scale, 0, 18 * Scale), BackgroundColor3 = Theme.AccentHover}, TweenPresets.Quick)
+        Tween(MinimizeBtn, {Size = UDim2.new(0, 18 * Scale, 0, 18 * Scale), BackgroundColor3 = Window.Theme.AccentHover}, TweenPresets.Quick)
     end)
     MinimizeBtn.MouseLeave:Connect(function()
-        Tween(MinimizeBtn, {Size = UDim2.new(0, 16 * Scale, 0, 16 * Scale), BackgroundColor3 = Theme.Accent}, TweenPresets.Quick)
+        Tween(MinimizeBtn, {Size = UDim2.new(0, 16 * Scale, 0, 16 * Scale), BackgroundColor3 = Window.Theme.Accent}, TweenPresets.Quick)
     end)
     
     -- Close Button
@@ -665,11 +781,13 @@ function AstraLib:CreateWindow(options)
         ZIndex = ZIndex.TopBar
     }, {Create("UICorner", {CornerRadius = UDim.new(1, 0)})})
     
+    Window.ThemeObjects.CloseBtn = CloseBtn
+    
     CloseBtn.MouseEnter:Connect(function()
-        Tween(CloseBtn, {Size = UDim2.new(0, 18 * Scale, 0, 18 * Scale), BackgroundColor3 = Theme.Error}, TweenPresets.Quick)
+        Tween(CloseBtn, {Size = UDim2.new(0, 18 * Scale, 0, 18 * Scale), BackgroundColor3 = Window.Theme.Error}, TweenPresets.Quick)
     end)
     CloseBtn.MouseLeave:Connect(function()
-        Tween(CloseBtn, {Size = UDim2.new(0, 16 * Scale, 0, 16 * Scale), BackgroundColor3 = Theme.CardBorder}, TweenPresets.Quick)
+        Tween(CloseBtn, {Size = UDim2.new(0, 16 * Scale, 0, 16 * Scale), BackgroundColor3 = Window.Theme.CardBorder}, TweenPresets.Quick)
     end)
     
     -- Tab Content
@@ -731,12 +849,29 @@ function AstraLib:CreateWindow(options)
         if not processed and input.KeyCode == MinimizeKey then ToggleWindow() end
     end)
     
-    -- Close dropdowns on click
+    -- Close dropdowns on click outside (Fixed)
     UserInputService.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 and Window.OpenDropdown then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
             task.defer(function()
-                if Window.OpenDropdown and Window.OpenDropdown.CloseDropdown then
-                    Window.OpenDropdown:CloseDropdown()
+                if Window.OpenDropdown then
+                    local dropdown = Window.OpenDropdown
+                    local mousePos = UserInputService:GetMouseLocation()
+                    
+                    -- Check if click is outside dropdown button and list
+                    local buttonFrame = dropdown.Frame
+                    local listContainer = dropdown.ListContainer
+                    
+                    local function isInsideFrame(frame)
+                        if not frame or not frame.Parent then return false end
+                        local pos = frame.AbsolutePosition
+                        local size = frame.AbsoluteSize
+                        return mousePos.X >= pos.X and mousePos.X <= pos.X + size.X and
+                               mousePos.Y >= pos.Y and mousePos.Y <= pos.Y + size.Y
+                    end
+                    
+                    if not isInsideFrame(buttonFrame) and not isInsideFrame(listContainer) then
+                        dropdown:CloseDropdown()
+                    end
                 end
             end)
         end
@@ -746,6 +881,117 @@ function AstraLib:CreateWindow(options)
     MainContainer.Size = UDim2.new(0, 0, 0, 0)
     task.wait(0.05)
     Tween(MainContainer, {Size = UDim2.new(0, 900 * Scale, 0, 600 * Scale)}, TweenPresets.Bounce)
+    
+    -- ═══════════════════════════════════════════════════════════════
+    -- THEME UPDATE FUNCTION
+    -- ═══════════════════════════════════════════════════════════════
+    local function UpdateTheme(newTheme)
+        local T = newTheme
+        local TO = Window.ThemeObjects
+        
+        -- Main UI
+        if TO.MainFrame then TO.MainFrame.BackgroundColor3 = T.Background end
+        if TO.MainFrameStroke then TO.MainFrameStroke.Color = T.CardBorder end
+        if TO.Shadow then TO.Shadow.ImageColor3 = T.Shadow end
+        if TO.Sidebar then TO.Sidebar.BackgroundColor3 = T.Sidebar end
+        if TO.SidebarFix then TO.SidebarFix.BackgroundColor3 = T.Sidebar end
+        if TO.Divider then TO.Divider.BackgroundColor3 = T.CardBorder end
+        
+        -- Mobile Button
+        if TO.MobileButton then TO.MobileButton.BackgroundColor3 = T.Accent end
+        if TO.MobileButtonStroke then TO.MobileButtonStroke.Color = T.CardBorder end
+        
+        -- Labels
+        if TO.TitleLabel then TO.TitleLabel.TextColor3 = T.Text end
+        if TO.VersionLabel then TO.VersionLabel.TextColor3 = T.TextMuted end
+        if TO.TabSectionLabel then TO.TabSectionLabel.TextColor3 = T.TextMuted end
+        if TO.TopVersionLabel then TO.TopVersionLabel.TextColor3 = T.TextMuted end
+        if TO.UserName then TO.UserName.TextColor3 = T.Text end
+        if TO.DisplayName then TO.DisplayName.TextColor3 = T.TextMuted end
+        
+        -- Avatar
+        if TO.AvatarFrame then TO.AvatarFrame.BackgroundColor3 = T.Card end
+        
+        -- Tab Container
+        if TO.TabContainer then TO.TabContainer.ScrollBarImageColor3 = T.Accent end
+        
+        -- Icons
+        if TO.SearchIcon then TO.SearchIcon.ImageColor3 = T.TextMuted end
+        if TO.MinimizeBtn then TO.MinimizeBtn.BackgroundColor3 = T.Accent end
+        if TO.CloseBtn then TO.CloseBtn.BackgroundColor3 = T.CardBorder end
+        
+        -- Update all tabs
+        for _, tab in pairs(Window.Tabs) do
+            local isActive = Window.ActiveTab == tab
+            
+            -- Tab button
+            if tab.Button then
+                tab.Button.BackgroundColor3 = T.Accent
+                tab.Button.BackgroundTransparency = isActive and 0 or 1
+            end
+            
+            -- Tab label - always Text color when active or muted when not
+            if tab.Label then
+                tab.Label.TextColor3 = isActive and T.Text or T.TextMuted
+            end
+            
+            -- Tab icon - WHITE when active (to contrast with accent background), muted when not
+            if tab.Icon then
+                tab.Icon.ImageColor3 = isActive and Color3.new(1, 1, 1) or T.TextMuted
+            end
+            
+            -- Update sections
+            for side, sections in pairs(tab.Sections) do
+                for _, section in pairs(sections) do
+                    -- Section frame
+                    if section.Frame then
+                        section.Frame.BackgroundColor3 = T.Card
+                        local stroke = section.Frame:FindFirstChild("UIStroke")
+                        if stroke then stroke.Color = T.CardBorder end
+                    end
+                    
+                    -- Section header
+                    local header = section.Frame and section.Frame:FindFirstChild("Header")
+                    if header then header.TextColor3 = T.Text end
+                    
+                    -- Update elements in section
+                    if section.Content then
+                        for _, element in pairs(section.Content:GetChildren()) do
+                            if element:IsA("Frame") then
+                                -- Update element-specific colors
+                                for _, child in pairs(element:GetDescendants()) do
+                                    if child:IsA("TextLabel") then
+                                        -- Check if it's a main label or muted
+                                        if child.Name == "Text" or child.TextColor3 == T.TextMuted then
+                                            -- Keep muted labels muted
+                                        else
+                                            child.TextColor3 = T.Text
+                                        end
+                                    elseif child:IsA("TextButton") then
+                                        if child.Name == "Toggle" then
+                                            -- Toggle handled separately
+                                        elseif child.BackgroundColor3 ~= Color3.new(1,1,1) then
+                                            child.BackgroundColor3 = T.Accent
+                                        end
+                                    elseif child:IsA("TextBox") then
+                                        child.BackgroundColor3 = T.Input
+                                        child.TextColor3 = T.Text
+                                        child.PlaceholderColor3 = T.TextMuted
+                                        local stroke = child:FindFirstChild("UIStroke")
+                                        if stroke then stroke.Color = T.InputBorder end
+                                    elseif child:IsA("UIStroke") then
+                                        if child.Parent:IsA("TextBox") then
+                                            child.Color = T.InputBorder
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
     
     -- ═══════════════════════════════════════════════════════════════
     -- TAB CREATION
@@ -842,27 +1088,29 @@ function AstraLib:CreateWindow(options)
         TabButton.MouseEnter:Connect(function()
             if Window.ActiveTab ~= Tab then
                 Tween(TabButton, {BackgroundTransparency = 0.8}, TweenPresets.Quick)
-                Tween(TabLabel, {TextColor3 = Theme.Text}, TweenPresets.Quick)
+                Tween(TabLabel, {TextColor3 = Window.Theme.Text}, TweenPresets.Quick)
             end
         end)
         
         TabButton.MouseLeave:Connect(function()
             if Window.ActiveTab ~= Tab then
                 Tween(TabButton, {BackgroundTransparency = 1}, TweenPresets.Quick)
-                Tween(TabLabel, {TextColor3 = Theme.TextMuted}, TweenPresets.Quick)
+                Tween(TabLabel, {TextColor3 = Window.Theme.TextMuted}, TweenPresets.Quick)
             end
         end)
         
         local function SelectTab()
             for _, t in pairs(Window.Tabs) do
                 Tween(t.Button, {BackgroundTransparency = 1}, TweenPresets.Normal)
-                Tween(t.Label, {TextColor3 = Theme.TextMuted}, TweenPresets.Normal)
-                Tween(t.Icon, {ImageColor3 = Theme.TextMuted}, TweenPresets.Normal)
+                Tween(t.Label, {TextColor3 = Window.Theme.TextMuted}, TweenPresets.Normal)
+                -- Inactive tabs get muted icon color
+                Tween(t.Icon, {ImageColor3 = Window.Theme.TextMuted}, TweenPresets.Normal)
                 t.Page.Visible = false
             end
             Tween(TabButton, {BackgroundTransparency = 0}, TweenPresets.Normal)
-            Tween(TabLabel, {TextColor3 = Theme.Text}, TweenPresets.Normal)
-            Tween(TabIconImg, {ImageColor3 = Theme.Accent}, TweenPresets.Normal)
+            Tween(TabLabel, {TextColor3 = Window.Theme.Text}, TweenPresets.Normal)
+            -- FIXED: Active tab icon is WHITE to contrast with accent background
+            Tween(TabIconImg, {ImageColor3 = Color3.new(1, 1, 1)}, TweenPresets.Normal)
             TabPage.Visible = true
             Window.ActiveTab = Tab
         end
@@ -893,13 +1141,13 @@ function AstraLib:CreateWindow(options)
             local SectionFrame = Create("Frame", {
                 Name = SectionName,
                 Parent = Column,
-                BackgroundColor3 = Theme.Card,
+                BackgroundColor3 = Window.Theme.Card,
                 Size = UDim2.new(1, 0, 0, 0),
                 AutomaticSize = Enum.AutomaticSize.Y,
                 ZIndex = ZIndex.Cards
             }, {
                 Create("UICorner", {CornerRadius = UDim.new(0, 10)}),
-                Create("UIStroke", {Color = Theme.CardBorder, Thickness = 1}),
+                Create("UIStroke", {Color = Window.Theme.CardBorder, Thickness = 1}),
                 Create("UIPadding", {
                     PaddingTop = UDim.new(0, 12 * Scale),
                     PaddingBottom = UDim.new(0, 12 * Scale),
@@ -916,7 +1164,7 @@ function AstraLib:CreateWindow(options)
                 Size = UDim2.new(1, 0, 0, 22 * Scale),
                 Font = Enum.Font.GothamBold,
                 Text = SectionName,
-                TextColor3 = Theme.Text,
+                TextColor3 = Window.Theme.Text,
                 TextSize = 14 * Scale,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 LayoutOrder = 0,
@@ -957,7 +1205,7 @@ function AstraLib:CreateWindow(options)
                 local Label = Create("TextLabel", {
                     Name = "Text", Parent = LabelFrame, BackgroundTransparency = 1,
                     Size = UDim2.new(1, 0, 1, 0), Font = Enum.Font.Gotham,
-                    Text = Text, TextColor3 = Theme.TextMuted, TextSize = 11 * Scale,
+                    Text = Text, TextColor3 = Window.Theme.TextMuted, TextSize = 11 * Scale,
                     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = ZIndex.Elements
                 })
                 local obj = {Frame = LabelFrame, Label = Label}
@@ -974,11 +1222,11 @@ function AstraLib:CreateWindow(options)
                 local Flag = opt.Flag
                 
                 local Frame = Create("Frame", {Name = Name, Parent = Content, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 30 * Scale), ZIndex = ZIndex.Elements})
-                Create("TextLabel", {Parent = Frame, BackgroundTransparency = 1, Size = UDim2.new(1, -60 * Scale, 1, 0), Font = Enum.Font.Gotham, Text = Name, TextColor3 = Theme.Text, TextSize = 13 * Scale, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = ZIndex.Elements})
+                Create("TextLabel", {Parent = Frame, BackgroundTransparency = 1, Size = UDim2.new(1, -60 * Scale, 1, 0), Font = Enum.Font.Gotham, Text = Name, TextColor3 = Window.Theme.Text, TextSize = 13 * Scale, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = ZIndex.Elements})
                 
                 local Button = Create("TextButton", {
                     Name = "Toggle", Parent = Frame,
-                    BackgroundColor3 = Default and Theme.Toggle or Theme.ToggleOff,
+                    BackgroundColor3 = Default and Window.Theme.Toggle or Window.Theme.ToggleOff,
                     Position = UDim2.new(1, -48 * Scale, 0.5, 0),
                     Size = UDim2.new(0, 48 * Scale, 0, 24 * Scale),
                     AnchorPoint = Vector2.new(0, 0.5), Text = "", AutoButtonColor = false,
@@ -999,7 +1247,7 @@ function AstraLib:CreateWindow(options)
                 function Toggle:Set(v, skip)
                     Value = v
                     Toggle.Value = v
-                    Tween(Button, {BackgroundColor3 = v and Theme.Toggle or Theme.ToggleOff}, TweenPresets.Normal)
+                    Tween(Button, {BackgroundColor3 = v and Window.Theme.Toggle or Window.Theme.ToggleOff}, TweenPresets.Normal)
                     Tween(Circle, {Position = v and UDim2.new(1, -22 * Scale, 0.5, 0) or UDim2.new(0, 4 * Scale, 0.5, 0)}, TweenPresets.Bounce)
                     if not skip then Callback(v) end
                 end
@@ -1024,12 +1272,12 @@ function AstraLib:CreateWindow(options)
                 local Flag = opt.Flag
                 
                 local Frame = Create("Frame", {Name = Name, Parent = Content, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 45 * Scale), ZIndex = ZIndex.Elements})
-                Create("TextLabel", {Parent = Frame, BackgroundTransparency = 1, Position = UDim2.new(0, 10 * Scale, 0, 0), Size = UDim2.new(1, -70 * Scale, 0, 20 * Scale), Font = Enum.Font.Gotham, Text = Name, TextColor3 = Theme.Text, TextSize = 13 * Scale, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = ZIndex.Elements})
-                local ValueLabel = Create("TextLabel", {Parent = Frame, BackgroundTransparency = 1, Position = UDim2.new(1, 0, 0, 0), Size = UDim2.new(0, 60 * Scale, 0, 20 * Scale), AnchorPoint = Vector2.new(1, 0), Font = Enum.Font.Gotham, Text = Default .. "/" .. Max, TextColor3 = Theme.TextMuted, TextSize = 12 * Scale, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = ZIndex.Elements})
+                Create("TextLabel", {Parent = Frame, BackgroundTransparency = 1, Position = UDim2.new(0, 10 * Scale, 0, 0), Size = UDim2.new(1, -70 * Scale, 0, 20 * Scale), Font = Enum.Font.Gotham, Text = Name, TextColor3 = Window.Theme.Text, TextSize = 13 * Scale, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = ZIndex.Elements})
+                local ValueLabel = Create("TextLabel", {Parent = Frame, BackgroundTransparency = 1, Position = UDim2.new(1, 0, 0, 0), Size = UDim2.new(0, 60 * Scale, 0, 20 * Scale), AnchorPoint = Vector2.new(1, 0), Font = Enum.Font.Gotham, Text = Default .. "/" .. Max, TextColor3 = Window.Theme.TextMuted, TextSize = 12 * Scale, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = ZIndex.Elements})
                 
-                local Bg = Create("Frame", {Parent = Frame, BackgroundColor3 = Theme.SliderBg, Position = UDim2.new(0, 0, 0, 28 * Scale), Size = UDim2.new(1, 0, 0, 6 * Scale), ZIndex = ZIndex.Elements}, {Create("UICorner", {CornerRadius = UDim.new(1, 0)})})
-                local Fill = Create("Frame", {Parent = Bg, BackgroundColor3 = Theme.SliderFill, Size = UDim2.new((Default - Min) / (Max - Min), 0, 1, 0), ZIndex = ZIndex.Elements + 1}, {Create("UICorner", {CornerRadius = UDim.new(1, 0)})})
-                local Knob = Create("Frame", {Parent = Bg, BackgroundColor3 = Color3.new(1, 1, 1), Position = UDim2.new((Default - Min) / (Max - Min), 0, 0.5, 0), Size = UDim2.new(0, 14 * Scale, 0, 14 * Scale), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = ZIndex.Elements + 2}, {Create("UICorner", {CornerRadius = UDim.new(1, 0)}), Create("UIStroke", {Color = Theme.Accent, Thickness = 2})})
+                local Bg = Create("Frame", {Parent = Frame, BackgroundColor3 = Window.Theme.SliderBg, Position = UDim2.new(0, 0, 0, 28 * Scale), Size = UDim2.new(1, 0, 0, 6 * Scale), ZIndex = ZIndex.Elements}, {Create("UICorner", {CornerRadius = UDim.new(1, 0)})})
+                local Fill = Create("Frame", {Parent = Bg, BackgroundColor3 = Window.Theme.SliderFill, Size = UDim2.new((Default - Min) / (Max - Min), 0, 1, 0), ZIndex = ZIndex.Elements + 1}, {Create("UICorner", {CornerRadius = UDim.new(1, 0)})})
+                local Knob = Create("Frame", {Parent = Bg, BackgroundColor3 = Color3.new(1, 1, 1), Position = UDim2.new((Default - Min) / (Max - Min), 0, 0.5, 0), Size = UDim2.new(0, 14 * Scale, 0, 14 * Scale), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = ZIndex.Elements + 2}, {Create("UICorner", {CornerRadius = UDim.new(1, 0)}), Create("UIStroke", {Color = Window.Theme.Accent, Thickness = 2})})
                 
                 local Value = Default
                 local Sliding = false
@@ -1070,7 +1318,7 @@ function AstraLib:CreateWindow(options)
                 return Slider
             end
             
-            -- DROPDOWN
+            -- DROPDOWN (Fixed)
             function Section:CreateDropdown(opt)
                 opt = opt or {}
                 local Name = opt.Name or "Dropdown"
@@ -1080,25 +1328,25 @@ function AstraLib:CreateWindow(options)
                 local Flag = opt.Flag
                 
                 local Frame = Create("Frame", {Name = Name, Parent = Content, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 55 * Scale), ZIndex = ZIndex.Elements})
-                Create("TextLabel", {Parent = Frame, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 18 * Scale), Font = Enum.Font.GothamMedium, Text = Name, TextColor3 = Theme.Text, TextSize = 13 * Scale, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = ZIndex.Elements})
+                Create("TextLabel", {Parent = Frame, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 18 * Scale), Font = Enum.Font.GothamMedium, Text = Name, TextColor3 = Window.Theme.Text, TextSize = 13 * Scale, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = ZIndex.Elements})
                 
                 local Button = Create("TextButton", {
-                    Parent = Frame, BackgroundColor3 = Theme.Input,
+                    Parent = Frame, BackgroundColor3 = Window.Theme.Input,
                     Position = UDim2.new(0, 0, 0, 22 * Scale), Size = UDim2.new(1, 0, 0, 32 * Scale),
                     Text = "", AutoButtonColor = false, ZIndex = ZIndex.Elements + 1
-                }, {Create("UICorner", {CornerRadius = UDim.new(0, 6)}), Create("UIStroke", {Color = Theme.InputBorder, Thickness = 1})})
+                }, {Create("UICorner", {CornerRadius = UDim.new(0, 6)}), Create("UIStroke", {Color = Window.Theme.InputBorder, Thickness = 1})})
                 
-                local Selected = Create("TextLabel", {Parent = Button, BackgroundTransparency = 1, Position = UDim2.new(0, 12 * Scale, 0, 0), Size = UDim2.new(1, -40 * Scale, 1, 0), Font = Enum.Font.Gotham, Text = Default, TextColor3 = Theme.Text, TextSize = 12 * Scale, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = ZIndex.Elements + 2})
-                local Arrow = Create("TextLabel", {Parent = Button, BackgroundTransparency = 1, Position = UDim2.new(1, -25 * Scale, 0.5, 0), Size = UDim2.new(0, 15 * Scale, 0, 15 * Scale), AnchorPoint = Vector2.new(0, 0.5), Font = Enum.Font.GothamBold, Text = "▼", TextColor3 = Theme.TextMuted, TextSize = 10 * Scale, ZIndex = ZIndex.Elements + 2})
+                local Selected = Create("TextLabel", {Parent = Button, BackgroundTransparency = 1, Position = UDim2.new(0, 12 * Scale, 0, 0), Size = UDim2.new(1, -40 * Scale, 1, 0), Font = Enum.Font.Gotham, Text = Default, TextColor3 = Window.Theme.Text, TextSize = 12 * Scale, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = ZIndex.Elements + 2})
+                local Arrow = Create("TextLabel", {Parent = Button, BackgroundTransparency = 1, Position = UDim2.new(1, -25 * Scale, 0.5, 0), Size = UDim2.new(0, 15 * Scale, 0, 15 * Scale), AnchorPoint = Vector2.new(0, 0.5), Font = Enum.Font.GothamBold, Text = "▼", TextColor3 = Window.Theme.TextMuted, TextSize = 10 * Scale, ZIndex = ZIndex.Elements + 2})
                 
                 -- Dropdown list (parent to ScreenGui for proper ZIndex)
                 local ListContainer = Create("Frame", {Parent = ScreenGui, BackgroundTransparency = 1, Visible = false, ZIndex = ZIndex.Dropdown})
-                local List = Create("Frame", {Parent = ListContainer, BackgroundColor3 = Theme.Input, Size = UDim2.new(0, 0, 0, 0), ClipsDescendants = true, ZIndex = ZIndex.Dropdown}, {
+                local List = Create("Frame", {Parent = ListContainer, BackgroundColor3 = Window.Theme.Input, Size = UDim2.new(0, 0, 0, 0), ClipsDescendants = true, ZIndex = ZIndex.Dropdown}, {
                     Create("UICorner", {CornerRadius = UDim.new(0, 6)}),
-                    Create("UIStroke", {Color = Theme.InputBorder, Thickness = 1}),
+                    Create("UIStroke", {Color = Window.Theme.InputBorder, Thickness = 1}),
                     Create("ScrollingFrame", {
                         Name = "Scroll", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
-                        CanvasSize = UDim2.new(0, 0, 0, 0), ScrollBarThickness = 3, ScrollBarImageColor3 = Theme.Accent,
+                        CanvasSize = UDim2.new(0, 0, 0, 0), ScrollBarThickness = 3, ScrollBarImageColor3 = Window.Theme.Accent,
                         AutomaticCanvasSize = Enum.AutomaticSize.Y, BorderSizePixel = 0, ZIndex = ZIndex.DropdownItems
                     }, {
                         Create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2)}),
@@ -1109,7 +1357,7 @@ function AstraLib:CreateWindow(options)
                 
                 local Value = Default
                 local Open = false
-                local Dropdown = {Type = "Dropdown", Value = Value, Frame = Frame}
+                local Dropdown = {Type = "Dropdown", Value = Value, Frame = Frame, ListContainer = ListContainer}
                 
                 local function GetListHeight()
                     return math.min(#Items * (28 * Scale + 2) + 12, 150 * Scale)
@@ -1125,12 +1373,12 @@ function AstraLib:CreateWindow(options)
                 
                 local function CreateOption(item)
                     local Opt = Create("TextButton", {
-                        Name = item, Parent = Scroll, BackgroundColor3 = Theme.CardHover,
+                        Name = item, Parent = Scroll, BackgroundColor3 = Window.Theme.CardHover,
                         BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 28 * Scale),
                         Text = "", AutoButtonColor = false, ZIndex = ZIndex.DropdownItems
                     }, {
                         Create("UICorner", {CornerRadius = UDim.new(0, 4)}),
-                        Create("TextLabel", {BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0, 0), Size = UDim2.new(1, -20, 1, 0), Font = Enum.Font.Gotham, Text = item, TextColor3 = Theme.Text, TextSize = 12 * Scale, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = ZIndex.DropdownItems + 1})
+                        Create("TextLabel", {BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0, 0), Size = UDim2.new(1, -20, 1, 0), Font = Enum.Font.Gotham, Text = item, TextColor3 = Window.Theme.Text, TextSize = 12 * Scale, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = ZIndex.DropdownItems + 1})
                     })
                     Opt.MouseEnter:Connect(function() Tween(Opt, {BackgroundTransparency = 0}, TweenPresets.Quick) end)
                     Opt.MouseLeave:Connect(function() Tween(Opt, {BackgroundTransparency = 1}, TweenPresets.Quick) end)
@@ -1148,7 +1396,7 @@ function AstraLib:CreateWindow(options)
                     end
                     Tween(Arrow, {Rotation = 0}, TweenPresets.Normal)
                     Tween(List, {Size = UDim2.new(0, Button.AbsoluteSize.X, 0, 0)}, TweenPresets.Normal)
-                    Tween(Button:FindFirstChild("UIStroke"), {Color = Theme.InputBorder}, TweenPresets.Quick)
+                    Tween(Button:FindFirstChild("UIStroke"), {Color = Window.Theme.InputBorder}, TweenPresets.Quick)
                     task.delay(0.25, function()
                         if not Open then ListContainer.Visible = false end
                     end)
@@ -1166,7 +1414,11 @@ function AstraLib:CreateWindow(options)
                     List.Size = UDim2.new(0, Button.AbsoluteSize.X, 0, 0)
                     Tween(Arrow, {Rotation = 180}, TweenPresets.Normal)
                     Tween(List, {Size = UDim2.new(0, Button.AbsoluteSize.X, 0, GetListHeight())}, TweenPresets.Bounce)
-                    Tween(Button:FindFirstChild("UIStroke"), {Color = Theme.Accent}, TweenPresets.Quick)
+                    Tween(Button:FindFirstChild("UIStroke"), {Color = Window.Theme.Accent}, TweenPresets.Quick)
+                end
+                
+                function Dropdown:IsOpen()
+                    return Open
                 end
                 
                 for _, item in ipairs(Items) do CreateOption(item) end
@@ -1182,11 +1434,14 @@ function AstraLib:CreateWindow(options)
                     for _, c in pairs(Scroll:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
                     Items = newItems
                     for _, item in ipairs(Items) do CreateOption(item) end
-                    if Open then UpdatePos() end
+                    if Open then 
+                        UpdatePos() 
+                        List.Size = UDim2.new(0, Button.AbsoluteSize.X, 0, GetListHeight())
+                    end
                 end
                 
-                Button.MouseEnter:Connect(function() if not Open then Tween(Button:FindFirstChild("UIStroke"), {Color = Theme.TextMuted}, TweenPresets.Quick) end end)
-                Button.MouseLeave:Connect(function() if not Open then Tween(Button:FindFirstChild("UIStroke"), {Color = Theme.InputBorder}, TweenPresets.Quick) end end)
+                Button.MouseEnter:Connect(function() if not Open then Tween(Button:FindFirstChild("UIStroke"), {Color = Window.Theme.TextMuted}, TweenPresets.Quick) end end)
+                Button.MouseLeave:Connect(function() if not Open then Tween(Button:FindFirstChild("UIStroke"), {Color = Window.Theme.InputBorder}, TweenPresets.Quick) end end)
                 Button.MouseButton1Click:Connect(function() 
                     if Open then 
                         Dropdown:CloseDropdown() 
@@ -1225,18 +1480,18 @@ function AstraLib:CreateWindow(options)
                 
                 local Frame = Create("Frame", {Name = Name, Parent = Content, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 35 * Scale), ZIndex = ZIndex.Elements, ClipsDescendants = true})
                 local Btn = Create("TextButton", {
-                    Parent = Frame, BackgroundColor3 = Theme.Accent, Size = UDim2.new(1, 0, 1, 0),
+                    Parent = Frame, BackgroundColor3 = Window.Theme.Accent, Size = UDim2.new(1, 0, 1, 0),
                     Font = Enum.Font.GothamMedium, Text = Name, TextColor3 = Color3.new(1, 1, 1),
                     TextSize = 13 * Scale, AutoButtonColor = false, ZIndex = ZIndex.Elements + 1, ClipsDescendants = true
                 }, {Create("UICorner", {CornerRadius = UDim.new(0, 6)})})
                 
-                Btn.MouseEnter:Connect(function() Tween(Btn, {BackgroundColor3 = Theme.AccentHover}, TweenPresets.Quick) end)
-                Btn.MouseLeave:Connect(function() Tween(Btn, {BackgroundColor3 = Theme.Accent}, TweenPresets.Quick) end)
+                Btn.MouseEnter:Connect(function() Tween(Btn, {BackgroundColor3 = Window.Theme.AccentHover}, TweenPresets.Quick) end)
+                Btn.MouseLeave:Connect(function() Tween(Btn, {BackgroundColor3 = Window.Theme.Accent}, TweenPresets.Quick) end)
                 Btn.MouseButton1Click:Connect(function()
                     Ripple(Btn, Mouse.X, Mouse.Y)
-                    Tween(Btn, {BackgroundColor3 = Theme.AccentDark}, TweenPresets.Quick)
+                    Tween(Btn, {BackgroundColor3 = Window.Theme.AccentDark}, TweenPresets.Quick)
                     task.wait(0.1)
-                    Tween(Btn, {BackgroundColor3 = Theme.AccentHover}, TweenPresets.Quick)
+                    Tween(Btn, {BackgroundColor3 = Window.Theme.AccentHover}, TweenPresets.Quick)
                     Callback()
                 end)
                 return {Frame = Frame, Button = Btn}
@@ -1252,14 +1507,14 @@ function AstraLib:CreateWindow(options)
                 local Flag = opt.Flag
                 
                 local Frame = Create("Frame", {Name = Name, Parent = Content, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 55 * Scale), ZIndex = ZIndex.Elements})
-                Create("TextLabel", {Parent = Frame, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 18 * Scale), Font = Enum.Font.GothamMedium, Text = Name, TextColor3 = Theme.Text, TextSize = 13 * Scale, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = ZIndex.Elements})
+                Create("TextLabel", {Parent = Frame, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 18 * Scale), Font = Enum.Font.GothamMedium, Text = Name, TextColor3 = Window.Theme.Text, TextSize = 13 * Scale, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = ZIndex.Elements})
                 
                 local Box = Create("TextBox", {
-                    Parent = Frame, BackgroundColor3 = Theme.Input,
+                    Parent = Frame, BackgroundColor3 = Window.Theme.Input,
                     Position = UDim2.new(0, 0, 0, 22 * Scale), Size = UDim2.new(1, 0, 0, 32 * Scale),
-                    Font = Enum.Font.Gotham, PlaceholderText = Placeholder, PlaceholderColor3 = Theme.TextMuted,
-                    Text = Default, TextColor3 = Theme.Text, TextSize = 12 * Scale, ClearTextOnFocus = false, ZIndex = ZIndex.Elements + 1
-                }, {Create("UICorner", {CornerRadius = UDim.new(0, 6)}), Create("UIStroke", {Color = Theme.InputBorder, Thickness = 1}), Create("UIPadding", {PaddingLeft = UDim.new(0, 12 * Scale), PaddingRight = UDim.new(0, 12 * Scale)})})
+                    Font = Enum.Font.Gotham, PlaceholderText = Placeholder, PlaceholderColor3 = Window.Theme.TextMuted,
+                    Text = Default, TextColor3 = Window.Theme.Text, TextSize = 12 * Scale, ClearTextOnFocus = false, ZIndex = ZIndex.Elements + 1
+                }, {Create("UICorner", {CornerRadius = UDim.new(0, 6)}), Create("UIStroke", {Color = Window.Theme.InputBorder, Thickness = 1}), Create("UIPadding", {PaddingLeft = UDim.new(0, 12 * Scale), PaddingRight = UDim.new(0, 12 * Scale)})})
                 
                 local Value = Default
                 local Input = {Type = "Input", Value = Value, Frame = Frame}
@@ -1271,15 +1526,15 @@ function AstraLib:CreateWindow(options)
                     if not skip then Callback(v) end
                 end
                 
-                Box.Focused:Connect(function() Tween(Box:FindFirstChild("UIStroke"), {Color = Theme.InputFocus}, TweenPresets.Quick) end)
+                Box.Focused:Connect(function() Tween(Box:FindFirstChild("UIStroke"), {Color = Window.Theme.InputFocus}, TweenPresets.Quick) end)
                 Box.FocusLost:Connect(function()
-                    Tween(Box:FindFirstChild("UIStroke"), {Color = Theme.InputBorder}, TweenPresets.Quick)
+                    Tween(Box:FindFirstChild("UIStroke"), {Color = Window.Theme.InputBorder}, TweenPresets.Quick)
                     Value = Box.Text
                     Input.Value = Value
                     Callback(Value)
                 end)
-                Box.MouseEnter:Connect(function() if not Box:IsFocused() then Tween(Box:FindFirstChild("UIStroke"), {Color = Theme.TextMuted}, TweenPresets.Quick) end end)
-                Box.MouseLeave:Connect(function() if not Box:IsFocused() then Tween(Box:FindFirstChild("UIStroke"), {Color = Theme.InputBorder}, TweenPresets.Quick) end end)
+                Box.MouseEnter:Connect(function() if not Box:IsFocused() then Tween(Box:FindFirstChild("UIStroke"), {Color = Window.Theme.TextMuted}, TweenPresets.Quick) end end)
+                Box.MouseLeave:Connect(function() if not Box:IsFocused() then Tween(Box:FindFirstChild("UIStroke"), {Color = Window.Theme.InputBorder}, TweenPresets.Quick) end end)
                 
                 if Flag then Window.Config:RegisterElement(Flag, Input) end
                 return Input
@@ -1294,14 +1549,14 @@ function AstraLib:CreateWindow(options)
                 local Flag = opt.Flag
                 
                 local Frame = Create("Frame", {Name = Name, Parent = Content, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 30 * Scale), ZIndex = ZIndex.Elements})
-                Create("TextLabel", {Parent = Frame, BackgroundTransparency = 1, Size = UDim2.new(1, -80 * Scale, 1, 0), Font = Enum.Font.Gotham, Text = Name, TextColor3 = Theme.Text, TextSize = 13 * Scale, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = ZIndex.Elements})
+                Create("TextLabel", {Parent = Frame, BackgroundTransparency = 1, Size = UDim2.new(1, -80 * Scale, 1, 0), Font = Enum.Font.Gotham, Text = Name, TextColor3 = Window.Theme.Text, TextSize = 13 * Scale, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = ZIndex.Elements})
                 
                 local Btn = Create("TextButton", {
-                    Parent = Frame, BackgroundColor3 = Theme.Input,
+                    Parent = Frame, BackgroundColor3 = Window.Theme.Input,
                     Position = UDim2.new(1, -70 * Scale, 0.5, 0), Size = UDim2.new(0, 70 * Scale, 0, 26 * Scale),
                     AnchorPoint = Vector2.new(0, 0.5), Font = Enum.Font.Gotham, Text = Default.Name or "None",
-                    TextColor3 = Theme.Text, TextSize = 11 * Scale, AutoButtonColor = false, ZIndex = ZIndex.Elements + 1
-                }, {Create("UICorner", {CornerRadius = UDim.new(0, 6)}), Create("UIStroke", {Color = Theme.InputBorder, Thickness = 1})})
+                    TextColor3 = Window.Theme.Text, TextSize = 11 * Scale, AutoButtonColor = false, ZIndex = ZIndex.Elements + 1
+                }, {Create("UICorner", {CornerRadius = UDim.new(0, 6)}), Create("UIStroke", {Color = Window.Theme.InputBorder, Thickness = 1})})
                 
                 local Value = Default
                 local Listening = false
@@ -1313,21 +1568,21 @@ function AstraLib:CreateWindow(options)
                     Btn.Text = k.Name or "None"
                 end
                 
-                Btn.MouseEnter:Connect(function() Tween(Btn:FindFirstChild("UIStroke"), {Color = Theme.TextMuted}, TweenPresets.Quick) end)
-                Btn.MouseLeave:Connect(function() if not Listening then Tween(Btn:FindFirstChild("UIStroke"), {Color = Theme.InputBorder}, TweenPresets.Quick) end end)
+                Btn.MouseEnter:Connect(function() Tween(Btn:FindFirstChild("UIStroke"), {Color = Window.Theme.TextMuted}, TweenPresets.Quick) end)
+                Btn.MouseLeave:Connect(function() if not Listening then Tween(Btn:FindFirstChild("UIStroke"), {Color = Window.Theme.InputBorder}, TweenPresets.Quick) end end)
                 Btn.MouseButton1Click:Connect(function()
                     Listening = true
                     Btn.Text = "..."
-                    Tween(Btn:FindFirstChild("UIStroke"), {Color = Theme.Accent}, TweenPresets.Quick)
-                    Tween(Btn, {BackgroundColor3 = Theme.CardHover}, TweenPresets.Quick)
+                    Tween(Btn:FindFirstChild("UIStroke"), {Color = Window.Theme.Accent}, TweenPresets.Quick)
+                    Tween(Btn, {BackgroundColor3 = Window.Theme.CardHover}, TweenPresets.Quick)
                 end)
                 
                 UserInputService.InputBegan:Connect(function(input, processed)
                     if Listening and input.UserInputType == Enum.UserInputType.Keyboard then
                         Listening = false
                         Keybind:Set(input.KeyCode)
-                        Tween(Btn:FindFirstChild("UIStroke"), {Color = Theme.InputBorder}, TweenPresets.Quick)
-                        Tween(Btn, {BackgroundColor3 = Theme.Input}, TweenPresets.Quick)
+                        Tween(Btn:FindFirstChild("UIStroke"), {Color = Window.Theme.InputBorder}, TweenPresets.Quick)
+                        Tween(Btn, {BackgroundColor3 = Window.Theme.Input}, TweenPresets.Quick)
                     elseif input.KeyCode == Value and not processed then
                         Callback(Value)
                     end
@@ -1346,55 +1601,107 @@ function AstraLib:CreateWindow(options)
             task.wait(0.1)
             TabButton.BackgroundTransparency = 0
             TabLabel.TextColor3 = Theme.Text
-            TabIconImg.ImageColor3 = Theme.Accent
+            -- FIXED: Set active tab icon to WHITE
+            TabIconImg.ImageColor3 = Color3.new(1, 1, 1)
             TabPage.Visible = true
             Window.ActiveTab = Tab
         end
         return Tab
     end
     
-    -- Config Tab
+    -- Config Tab (Fixed)
     function Window:CreateConfigTab()
         local ConfigTab = Window:CreateTab({Name = "Configs", Icon = "rbxassetid://7072719587"})
         local ConfigSection = ConfigTab:CreateSection({Name = "Configuration", Side = "Left"})
         local CurrentConfigs = Window.Config:GetConfigs()
         
-        local ConfigNameInput = ConfigSection:CreateInput({Name = "Config Name", Placeholder = "Enter config name...", Callback = function() end})
-        local ConfigDropdown = ConfigSection:CreateDropdown({Name = "Config List", Items = CurrentConfigs, Default = CurrentConfigs[1] or "", Callback = function() end})
+        local ConfigNameInput = ConfigSection:CreateInput({
+            Name = "Config Name", 
+            Placeholder = "Enter config name...", 
+            Callback = function() end
+        })
         
-        ConfigSection:CreateButton({Name = "Save Config", Callback = function()
-            local name = ConfigNameInput.Value
-            if name and name ~= "" then
-                Window.Config:SaveConfig(name)
-                ConfigDropdown:Refresh(Window.Config:GetConfigs())
+        local ConfigDropdown = ConfigSection:CreateDropdown({
+            Name = "Config List", 
+            Items = CurrentConfigs, 
+            Default = CurrentConfigs[1] or "", 
+            Callback = function() end
+        })
+        
+        ConfigSection:CreateButton({
+            Name = "Save Config", 
+            Callback = function()
+                local name = ConfigNameInput.Value
+                if name and name ~= "" then
+                    local success = Window.Config:SaveConfig(name)
+                    if success then
+                        -- Refresh dropdown after saving
+                        local configs = Window.Config:GetConfigs()
+                        ConfigDropdown:Refresh(configs)
+                        -- Select the newly saved config
+                        ConfigDropdown:Set(name, true)
+                    end
+                else
+                    warn("[AstraLib] Please enter a config name")
+                end
             end
-        end})
+        })
         
-        ConfigSection:CreateButton({Name = "Load Config", Callback = function()
-            local name = ConfigDropdown.Value
-            if name and name ~= "" then Window.Config:LoadConfig(name) end
-        end})
-        
-        ConfigSection:CreateButton({Name = "Delete Config", Callback = function()
-            local name = ConfigDropdown.Value
-            if name and name ~= "" then
-                Window.Config:DeleteConfig(name)
-                ConfigDropdown:Refresh(Window.Config:GetConfigs())
+        ConfigSection:CreateButton({
+            Name = "Load Config", 
+            Callback = function()
+                local name = ConfigDropdown.Value
+                if name and name ~= "" then 
+                    Window.Config:LoadConfig(name) 
+                else
+                    warn("[AstraLib] Please select a config to load")
+                end
             end
-        end})
+        })
         
-        ConfigSection:CreateButton({Name = "Refresh Configs", Callback = function()
-            ConfigDropdown:Refresh(Window.Config:GetConfigs())
-        end})
+        ConfigSection:CreateButton({
+            Name = "Delete Config", 
+            Callback = function()
+                local name = ConfigDropdown.Value
+                if name and name ~= "" then
+                    local success = Window.Config:DeleteConfig(name)
+                    if success then
+                        -- Refresh dropdown after deleting
+                        local configs = Window.Config:GetConfigs()
+                        ConfigDropdown:Refresh(configs)
+                        -- Select first available or clear
+                        if #configs > 0 then
+                            ConfigDropdown:Set(configs[1], true)
+                        else
+                            ConfigDropdown:Set("", true)
+                        end
+                    end
+                else
+                    warn("[AstraLib] Please select a config to delete")
+                end
+            end
+        })
+        
+        ConfigSection:CreateButton({
+            Name = "Refresh Configs", 
+            Callback = function()
+                local configs = Window.Config:GetConfigs()
+                ConfigDropdown:Refresh(configs)
+                if #configs > 0 and (not ConfigDropdown.Value or ConfigDropdown.Value == "") then
+                    ConfigDropdown:Set(configs[1], true)
+                end
+            end
+        })
         
         return ConfigTab
     end
     
+    -- FIXED: SetTheme now actually updates all UI elements
     function Window:SetTheme(name)
         if Themes[name] then
-            Theme = Themes[name]
-            Window.Theme = Theme
+            Window.Theme = Themes[name]
             Window.ThemeName = name
+            UpdateTheme(Window.Theme)
         end
     end
     
