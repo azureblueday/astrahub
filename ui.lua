@@ -1,4 +1,4 @@
-print("UI Lib by @d1starzz - v2.2.0")
+print("UI Lib by @d1starzz - v2.2.1")
 
 local AstraLib = {}
 AstraLib.__index = AstraLib
@@ -110,7 +110,7 @@ local Themes = {
     Dark = {
         Name = "Dark",
         Background = Color3.fromRGB(10, 14, 26),
-        Sidebar = Color3.fromRGB(15, 21, 37),
+         = Color3.fromRGB(15, 21, 37),
         Card = Color3.fromRGB(20, 28, 47),
         CardBorder = Color3.fromRGB(30, 42, 69),
         CardHover = Color3.fromRGB(28, 38, 62),
@@ -133,7 +133,7 @@ local Themes = {
     Nova = {
         Name = "Nova",
         Background = Color3.fromRGB(10, 10, 18),
-        Sidebar = Color3.fromRGB(15, 14, 28),
+         = Color3.fromRGB(15, 14, 28),
         Card = Color3.fromRGB(22, 20, 40),
         CardBorder = Color3.fromRGB(45, 30, 75),
         CardHover = Color3.fromRGB(35, 28, 58),
@@ -492,9 +492,9 @@ function AstraLib:CreateWindow(options)
     local Scale = GetScale()
     
     -- Window dimensions (flatter)
-    local WindowWidth = 800 * Scale
-    local WindowHeight = 500 * Scale
-    local SidebarWidth = 200 * Scale
+    local WindowWidth = 900 * Scale
+    local WindowHeight = 600 * Scale
+    local SidebarWidth = 180 * Scale
     
     if CoreGui:FindFirstChild("AstraLib") then
         CoreGui:FindFirstChild("AstraLib"):Destroy()
