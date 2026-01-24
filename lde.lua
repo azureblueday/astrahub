@@ -1,6 +1,6 @@
 local AstraLib = {}
 AstraLib.__index = AstraLib
-print("Astra UI Library - by @d1starzz (discord.gg/getnova)
+print("Astra UI Library - by @d1starzz (discord.gg/getnova)")
 -- Services
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
