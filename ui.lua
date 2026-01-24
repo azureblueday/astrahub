@@ -494,7 +494,7 @@ function AstraLib:CreateWindow(options)
     -- Window dimensions (flatter)
     local WindowWidth = 800 * Scale
     local WindowHeight = 500 * Scale
-    local SidebarWidth = 240 * Scale
+    local SidebarWidth = 200 * Scale
     
     if CoreGui:FindFirstChild("AstraLib") then
         CoreGui:FindFirstChild("AstraLib"):Destroy()
