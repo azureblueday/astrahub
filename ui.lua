@@ -6,12 +6,23 @@ local HttpService = game:GetService("HttpService")
 local CoreGui = game:GetService("CoreGui")
 local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
-print("V22")
+print("V23")
 local ZIndex = {
-    Shadow = 1, Background = 2, Sidebar = 10, SidebarContent = 15, Content = 20,
-    Cards = 25, Elements = 997, ElementsTop = 998, Dropdown = 999, DropdownItems = 999,
-    ColorPicker = 50, TopBar = 60, Modal = 200, MobileButton = 998
+    Shadow = 1,
+    Background = 2,
+    Sidebar = 10,
+    SidebarContent = 15,
+    Content = 20,
+    Cards = 25,
+    Elements = 30,
+    ElementsTop = 35,
+    Dropdown = 100,
+    DropdownItems = 105,
+    TopBar = 50,
+    Modal = 200,
+    MobileButton = 500
 }
+
 
 local Tweens = {
     Quick = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
