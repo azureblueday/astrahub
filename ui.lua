@@ -5,7 +5,7 @@ local UserInputService = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
 local CoreGui = game:GetService("CoreGui")
 local Player = Players.LocalPlayer
-print("Astra UI Library - Built by @xm5l")
+print("Astra UI Library (v14) - Built by @xm5l")
 local Tweens = {
     Quick = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
     Normal = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
@@ -329,8 +329,8 @@ function AstraLib:CreateWindow(opts)
 
     local UserFrame = Create("Frame", {Name = "User", Parent = Sidebar, BackgroundTransparency = 1, Position = UDim2.new(0, 10 * Scale, 1, -60 * Scale), Size = UDim2.new(1, -20 * Scale, 0, 50 * Scale), ZIndex = 5})
     Create("ImageLabel", {Name = "Avatar", Parent = UserFrame, BackgroundColor3 = Theme.Card, Position = UDim2.new(0, 5 * Scale, 0.5, 0), Size = UDim2.new(0, 40 * Scale, 0, 40 * Scale), AnchorPoint = Vector2.new(0, 0.5), Image = "rbxthumb://type=AvatarHeadShot&id=" .. Player.UserId .. "&w=150&h=150", ZIndex = 6}, {Create("UICorner", {CornerRadius = UDim.new(1, 0)})})
-    Create("TextLabel", {Name = "Name", Parent = UserFrame, BackgroundTransparency = 1, Position = UDim2.new(0, 55 * Scale, 0, 8 * Scale), Size = UDim2.new(1, -65 * Scale, 0, 16 * Scale), Font = Enum.Font.GothamMedium, Text = Player.Name, TextColor3 = Theme.Text, TextSize = 13 * Scale, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 6})
-    Create("TextLabel", {Name = "Display", Parent = UserFrame, BackgroundTransparency = 1, Position = UDim2.new(0, 55 * Scale, 0, 26 * Scale), Size = UDim2.new(1, -65 * Scale, 0, 14 * Scale), Font = Enum.Font.Gotham, Text = Player.DisplayName, TextColor3 = Theme.TextMuted, TextSize = 11 * Scale, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 6})
+    Create("TextLabel", {Name = "Name", Parent = UserFrame, BackgroundTransparency = 1, Position = UDim2.new(0, 55 * Scale, 0, 8 * Scale), Size = UDim2.new(1, -65 * Scale, 0, 16 * Scale), Font = Enum.Font.GothamMedium, Text = Player.DisplayName, TextColor3 = Theme.Text, TextSize = 13 * Scale, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 6})
+    Create("TextLabel", {Name = "Display", Parent = UserFrame, BackgroundTransparency = 1, Position = UDim2.new(0, 55 * Scale, 0, 26 * Scale), Size = UDim2.new(1, -65 * Scale, 0, 14 * Scale), Font = Enum.Font.Gotham, Text = SNC_Expiry / 86400, TextColor3 = Theme.TextMuted, TextSize = 11 * Scale, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 6})
 
     local ContentArea = Create("Frame", {Name = "Content", Parent = Main, BackgroundTransparency = 1, Position = UDim2.new(0, 200 * Scale, 0, 0), Size = UDim2.new(1, -200 * Scale, 1, 0), ZIndex = 2})
 
