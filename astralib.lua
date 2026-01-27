@@ -1,7 +1,7 @@
 local AstraLib = {}
 AstraLib.__index = AstraLib
 print("Astra UI Library - by @d1starzz (discord.gg/getnova)")
-print("Loaded Version: 472")
+print("Loaded Version: 473")
 -- Services
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -493,7 +493,7 @@ function ConfigSystem:SaveConfig(name)
     local data = {
         _metadata = {
             savedAt = os.time(),
-            version = "2.0",
+             = "2.0",
             subFolder = self.SubFolder
         },
         settings = {}
@@ -809,7 +809,7 @@ function AstraLib:CreateWindow(options)
         Position = UDim2.new(1, -55 * Scale, 0, 22 * Scale),
         Size = UDim2.new(0, 40 * Scale, 0, 16 * Scale),
         Font = Enum.Font.Gotham,
-        Text = Version,
+        Text = "v4",
         TextColor3 = Theme.Accent,
         TextSize = 12 * Scale,
         TextXAlignment = Enum.TextXAlignment.Right,
@@ -823,7 +823,7 @@ function AstraLib:CreateWindow(options)
         Position = UDim2.new(0, 20 * Scale, 0, 60 * Scale),
         Size = UDim2.new(1, -40 * Scale, 0, 20 * Scale),
         Font = Enum.Font.GothamMedium,
-        Text = "NAVIGATION",
+        Text = Version,
         TextColor3 = Theme.TextMuted,
         TextSize = 10 * Scale,
         TextXAlignment = Enum.TextXAlignment.Left,
