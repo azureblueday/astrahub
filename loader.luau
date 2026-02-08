@@ -6,7 +6,7 @@ local TweenService = game:GetService("TweenService")
 local lp = Players.LocalPlayer
 
 --// CONFIG
-local NOVA_DISCORD = "https://discord.gg/d7zJgeTy8C"
+local NOVA_DISCORD = "https://discord.gg/getnova"
 local ASTRA_SCRIPT_URL = "https://raw.githubusercontent.com/azureblueday/starscripts/refs/heads/main/astra60.luau"
 
 --// GUI SETUP
